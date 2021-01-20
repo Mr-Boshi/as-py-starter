@@ -1,0 +1,7 @@
+# Specify filepatterns you want git to ignore.
+.vscode
+*.dat
+exp
+sbr
+equ
+__pycache__

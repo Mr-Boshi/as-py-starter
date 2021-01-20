@@ -1,0 +1,33 @@
+===start_as script parameters===please do not change the line order===
+
+===Astra parameters===
+Model name:     strWC-ec
+Exp. data:      ec70358-onaxis
+Param.file:     WC
+Start time:     0
+End time:       10
+Background key: False
+
+===Model parameters===
+0.348 -- initial CNEUT1;
+0.222 -- final   CNEUT1;
+0.500 -- TIME when the dynamics starts;
+
+===Transport variables===
+CF5  = 2.00
+CF6  = 0.40
+CF7  = 1.20
+CF8  = 1.00
+CF9  = 1.60
+CF10 = 0.00
+CF11 = 0.23
+CF12 = 0.07
+CF13 = 3.00
+CF14 = 0.29
+CF15 = 0.06
+CF16 = 0.00
+
+===The Dan and Van in the model are set as follows:===
+CAR10=1/NE*(RHO/ABC)**2;
+Dan = CF7*(CF5*CAR10+CF9*exp(-((RHO-CF10)/CF11)**2)+CF12);
+Van = CF7*(CF6*CAR10*grad(NE)/NE + CF13*exp(-((RHO-CF14)/CF15)**2)+CF16);
