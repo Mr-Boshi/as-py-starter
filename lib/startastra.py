@@ -1,4 +1,4 @@
-def startastra(modelvars, dyndur, anomvars, astrastring, tm, os):															# Function to start astra
+def startastra(modelvars, dyndur, anomvars, astrastring, tm, os):				# Function to start astra
 	from progress.spinner import MoonSpinner
 	from lib.processfinder import processfinder
 
@@ -18,12 +18,13 @@ def startastra(modelvars, dyndur, anomvars, astrastring, tm, os):															
 							  +' '+astrastring['backkey']
 
 	# Starting ASTRA
+	print('\n\n================================================\n')
+	print('Astra messeges:\n')
 	os.system(startastra)
 	tm.sleep(2)
 
-	process = astrastring['model'] + '.exe'
-
 	print('\n\n================================================\n')
+	process = astrastring['model'] + '.exe'
 	with MoonSpinner('Astra calculation in progress...  ') as bar:
 		while processfinder(process):
 			tm.sleep(1)
@@ -33,7 +34,7 @@ def startastra(modelvars, dyndur, anomvars, astrastring, tm, os):															
 			if os.path.isfile('dat/dynam.dat'):
 				flag = True
 			else:
-				print('Astra exited with error')
+				print('\nAstra exited with error')
 				flag = False
 
 	print('\n================================================\n')

@@ -1,17 +1,18 @@
 ===start_as script parameters===please do not change the line order===
 
 ===Astra parameters===
-Model name:     strWC-ec
-Exp. data:      ec70358-onaxis
+Model name:     strWC-ec-asml
+Exp. data:      ec70358-onaxis-asex
 Param.file:     WC
 Start time:     0
-End time:       10
-Background key: False
+End time:       3
+Background key: yes
 
 ===Model parameters===
 0.348 -- initial CNEUT1;
 0.222 -- final   CNEUT1;
 0.500 -- TIME when the dynamics starts;
+Cycle with CNEUT autosampling: No
 
 ===Transport variables===
 CF5  = 2.00

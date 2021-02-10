@@ -14,8 +14,8 @@ def matfilesaver(time, r, prc, pre, pwcalc, pwexp, van, dan, vneo, dneo, nWtot, 
             + ' '+astrastring['st_time']\
             + ' '+astrastring['end_time']\
             + ' '+astrastring['backkey']
-	anom = [float(i) for i in anomvars]
-	modl = [float(i) for i in modelvars]
+	anom  = [float(i) for i in anomvars]
+	modl  = [float(modelvars[key]) for key in modelvars.keys()]
 	mdict = {'r': r, 'time': time, 'prc': prc, 'pre': pre, 'pwcalc': pwcalc, 'pwexp': pwexp, 'van': van, 'dan': dan, 'vneo': vneo, 'dneo': dneo,
           'nWtot': nWtot, 'gradnW': gradnW, 'grWvnW': grWvnW, 'paramfile': astrastring['param'], 'astra': startastra, 'modelvars': modl, 'anomvars': anom}
 	savemat(filename, mdict)
