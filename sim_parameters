@@ -5,14 +5,14 @@ Model name:     strWC-ec-asml
 Exp. data:      ec70358-onaxis-asex
 Param.file:     WC
 Start time:     0
-End time:       3
-Background key: yes
+End time:       10
+In background:  No
 
 ===Model parameters===
-0.348 -- initial CNEUT1;
-0.222 -- final   CNEUT1;
-0.500 -- TIME when the dynamics starts;
-Cycle with CNEUT autosampling: No
+initial CNEUT1 (CV4):                 0.348
+final   CNEUT1 (CV5):                 0.222
+TIME when the dynamics starts (CV6):  0.300
+Cycle with CNEUT autosampling:        No
 
 ===Transport variables===
 CF5  = 2.00
@@ -27,6 +27,16 @@ CF13 = 3.00
 CF14 = 0.29
 CF15 = 0.06
 CF16 = 0.00
+
+===Saving settings===
+Save modelling parameters: no
+Save calculation results:  yes
+Plot results:              yes
+
+===COMMENTS===
+End time is needed to start calculation,
+but in the model file there is a CV8=2*CV6+CV7 + 2 more time steps
+If End time >= CV8 then calculation will stop at CV8.
 
 ===The Dan and Van in the model are set as follows:===
 CAR10=1/NE*(RHO/ABC)**2;

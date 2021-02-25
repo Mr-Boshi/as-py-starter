@@ -1,8 +1,14 @@
 # Function to read dynamics from dyn/*
-def dynreader(arg):
-	file = open('exp/dyn/AXUV_'+arg+'.dyn', 'r')
-	lines = file.readlines()
-	line1 = lines[1].strip(' \n')
-	line1 = line1.split(' ')
-	dyndur = float(line1[-1])-float(line1[0])+0.01
-	return dyndur
+def dynreader(exp_file):
+	with open('exp/'+exp_file, 'r') as f:
+		file = f.read().splitlines()
+
+	iterator = 0
+	for line in file:
+		found = line.find('PRAD')
+		iterator +=1
+		if not found == -1:
+			times=file[iterator].split()
+			dyn_duration = float(times[-1])-float(times[0])
+		
+	return dyn_duration

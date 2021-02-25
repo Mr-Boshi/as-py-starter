@@ -2,9 +2,9 @@ def modelsetting(model_name, modelvars, anomvars, dyndur, sys):						# Setting u
 	file = open('equ/'+model_name).read().splitlines()
 
 	# calculation settings
-	file[1] = 'CV4='+modelvars['init_cneut']+';						! Initial CNEUT1'
-	file[2] = 'CV5='+modelvars['end_cneut']+';						! Final   CNEUT1'
-	file[3] = 'CV6='+modelvars['dyn_start']+';						! Start Dynamics'
+	file[1] = 'CV4='+modelvars.init_cneut+';						! Initial CNEUT1'
+	file[2] = 'CV5='+modelvars.end_cneut+';						! Final   CNEUT1'
+	file[3] = 'CV6='+modelvars.dyn_start+';						! Start Dynamics'
 	file[4] = 'CV7='+str(dyndur)+';						! Duration of detaled calculation'
 
 	# Anomalous coefficients

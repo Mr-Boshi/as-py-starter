@@ -1,6 +1,8 @@
 # Function to process astra results
 def as_processing(arraydata, radarray, dyndur, modelvars):
 	import numpy as np
+	np.seterr(divide='ignore', invalid='ignore')
+	
 	#Ctreating vars
 	# Time and radius (in cm)
 	time = arraydata[:, 0]
@@ -24,8 +26,8 @@ def as_processing(arraydata, radarray, dyndur, modelvars):
 	grWvnW = gradnW/nWtot
 
 	#Getting indecies to cut out dynamics and plots
-	timedif1 = abs(time-float(modelvars['end_cneut']))
-	timedif2 = abs(time-float(modelvars['end_cneut'])-dyndur)
+	timedif1 = abs(time-float(modelvars.end_cneut))
+	timedif2 = abs(time-float(modelvars.end_cneut)-dyndur)
 	dynind = [timedif1.argsort()[0], timedif2.argsort()[0]]
 
 	# Fixing subroutine flaws
