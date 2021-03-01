@@ -78,6 +78,7 @@ class model_settings:
 		self.end_cneut  = text.split(block_line+1)
 		self.dyn_start  = text.split(block_line+2)
 		self.cycle_key  = text.booled(block_line+3)
+		self.dynam_name = text.split(block_line+4)
 
 
 # Other settings
@@ -87,6 +88,13 @@ class exec_settings:
 		self.saving_settings = text.booled(block_line)
 		self.saving_data     = text.booled(block_line+1)
 		self.plotting_flag   = text.booled(block_line+2)
+
+class diffusion_coefficients:
+	def __init__(self, d_neo, v_neo, d_anom, v_anom):
+		self.d_neo  = d_neo
+		self.v_neo  = v_neo
+		self.d_anom = d_anom
+		self.v_anom = v_anom
 
 
 # Function to read variables CF...CF16
@@ -102,43 +110,22 @@ def transp_vars(file, block_line):
 #---------------------------------------------------------------------------------------------------------------------------------------
 
 
-# def booler(string_to_bool='', yes=True, no=False):
-# 	if string_to_bool.strip().lower() in ['true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly']:
-# 		return yes
-# 	else:
-# 		return no
-
-
 # Function for printing astra parameters to terminal
-def cmdprint(astrastring):
-
+def cmd_print(astrastring):
 	if astrastring.back_key:
 		key='Yes'
 	else:
 		key='No'
 
-	print('================================================\n')
-	print('Astra-Strahl model name: '+astrastring.model)
-	print('Experimental data file:  '+astrastring.exp)
-	print('Strahl param.file:       '+astrastring.param)
-	print('Calculation time:        '+astrastring.st_time + ' ... ' + astrastring.end_time)
-	print('Background key:          '+key)
-	print('\n================================================\n')
+	cmd_text= '================================================'                               + '\n' \
+			+ 'Astra-Strahl model name: '+astrastring.model                                    + '\n' \
+			+ 'Experimental data file:  '+astrastring.exp                                      + '\n' \
+			+ 'Strahl param.file:       '+astrastring.param                                    + '\n' \
+			+ 'Calculation limits:      '+astrastring.st_time + ' ... ' + astrastring.end_time + '\n' \
+			+ 'Background key:          '+key                                                  + '\n' \
+			+ '================================================'
 
-
-# Function to start astra
-def astra_calculation(astrastring, modelvars, anomvars, dyndur, sys, tm, os):
-	# Setting the model file
-	modelsetting(astrastring.model, modelvars, anomvars, dyndur, sys)
-
-	#Printing Astra parameters
-	cmdprint(astrastring)
-
-	# Starting Astra calculation.
-	# Flag == True -- no errors, flag == False -- exited with error
-	flag = startastra(modelvars, dyndur, anomvars, astrastring, tm, os)
-	return flag
-
+	print(cmd_text)
 
 # Function to set strahl.control file
 def strahlcontrol(filename, os):
@@ -149,6 +136,39 @@ def strahlcontrol(filename, os):
 	with open('strahl.control', 'w+') as strahl_file:
 		strahl_file.write(stral_control)
 
+
+# Function to start astra. Returns True when astra exited normally and False if an error occured
+def astra_calculation(astrastring, modelvars, anomvars, dyndur, sys, tm, os):
+	# Setting shtral.control file
+	strahlcontrol(astrastring.param, os)
+
+	# Setting the model file
+	modelsetting(astrastring.model, modelvars, anomvars, dyndur, sys)
+
+	#Printing Astra parameters
+	cmd_print(astrastring)
+
+	# Starting Astra calculation.
+	flag = startastra(modelvars, dyndur, anomvars, astrastring, tm, os)
+	return flag
+
+
+# Function to check if {dir} exists and create it if it doesn't
+def make_dir(dir):
+	if not os.path.exists(dir):
+		print('Path "{0}" not found and was created'.format(dir))
+		os.makedirs(dir)
+
+
+# Reading the saved data, converting it to arrays and removing the saved files.
+def read_astra_results(dyn_file_name, rad_file_name, pd):
+	arraydata = pd.read_table(dyn_file_name, sep="\s+", header=0).to_numpy()
+	radarray  = pd.read_table(rad_file_name, sep="\s+", header=0).to_numpy()
+
+	os.remove(dyn_file_name)
+	os.remove(rad_file_name)
+
+	return arraydata, radarray
 
 # Function to plot time evolution
 def timeplotter(arg, times):
@@ -187,45 +207,33 @@ with open(settings_filename, 'r') as f:
 
 astrastring        = astra_settings(file, 3)
 modelvars          = model_settings(file, 11)
-anomvars           = transp_vars(file, 17)
-execution_settings = exec_settings(file, 31)
-
-
-# Setting shtral.control file
-strahlcontrol(astrastring.param, os)
+anomvars           = transp_vars(file, 18)
+execution_settings = exec_settings(file, 32)
 
 
 # Reading dynamics duration from dyn/*
-dyndur = dynreader(astrastring.exp)
+dyndur = dynreader(astrastring.exp, modelvars.dynam_name, float(modelvars.dyn_start))
 
 
 # Starting astra calculation
-## Flag =     = True -- astra finished with no errors, flag = False -- exited with an error
-flag       = False
-iteration  = 1 # -- cycle counter
-start_time = tm.time()
+dyn_file_name = 'dat/dynam.dat'   # -- where the time evolution is saved
+rad_file_name = 'dat/radial.dat'  # -- where the radial profiles are saved
 
+print('\n================================================')
 if modelvars.cycle_key:
-	
-	print(print('\n================================================\n'))
-	print('Autosampling is on, iteration {0}'.format(iteration))
-	
+	iteration = 1                 # -- cycle counter
+	print('Autosampling is on')
 	while True:
-
 		# Astra calculation
-		flag = astra_calculation(astrastring, modelvars,
-		                         anomvars, dyndur, sys, tm, os)
-		print('Calculation ended in {0} seconds'.format(tm.time()-start_time))
-		print('\n================================================\n')
+		start_time = tm.time()
+		flag       = astra_calculation(astrastring, modelvars,
+		                        		anomvars, dyndur, sys, tm, os)
+		
+		print('Iteration {0} ended in {1} seconds'.format(iteration, tm.time()-start_time))
 
 		if flag:
-			# Reading the saved data, converting it to arrays...
-			arraydata = pd.read_table("dat/dynam.dat", sep="\s+", header=0).to_numpy()
-			radarray  = pd.read_table("dat/radial.dat", sep="\s+", header=0).to_numpy()
-
-			# ...and removing the files.
-			os.remove('dat/dynam.dat')
-			os.remove('dat/radial.dat')
+			# Reading the saved data
+			arraydata, radarray = read_astra_results(dyn_file_name, rad_file_name, pd)
 
 			# Calculating CNEUTS for best agreement
 			# suggflag == 1 -- good agreement, suggflag == 0 -- need recalculation
@@ -233,47 +241,56 @@ if modelvars.cycle_key:
 			if suggflag == 0:
 				modelvars.init_cneut = str(sugg[0])
 				modelvars.end_cneut  = str(sugg[1])
-				iteration =+ 1
-				start_time = tm.time()
-				print('Starting with new model parameters, iteration {0}'.format(iteration))
+				iteration += 1
+				print('Starting with new model parameters\n')
 
-			# If agreement is good, process the results of the calculation
+			# If agreement is good, exit the loop
 			else:
-				[time, r, prc, pre, pwcalc, pwexp, van, dan, vneo,
-					dneo, nWtot, gradnW, grWvnW, pr_err] = as_processing(arraydata, radarray, dyndur, modelvars)
 				break
+		# If astra exited with an error, exit the programm
 		else:
-			break
+			print('Astra exited with error, closing the program' + '\n' +
+                  '================================================')
+			exit()
 
 else:
+	print('Autosampling is off')
 	# Astra calculation
-	flag = astra_calculation(astrastring, modelvars,
-                          anomvars, dyndur, sys, tm, os)
-	print('Calculation ended in {0} seconds'.format(tm.time()-start_time))
+	start_time = tm.time()
+	flag       = astra_calculation(astrastring, modelvars,
+                        			anomvars, dyndur, sys, tm, os)
+	print('================================================\n' + \
+		  'Calculation ended in {0} seconds'.format(tm.time()-start_time))
 
 	if flag:
-		# Reading the saved data, converting it to arrays...
-		arraydata = pd.read_table("dat/dynam.dat", sep="\s+", header=0).to_numpy()
-		radarray  = pd.read_table("dat/radial.dat", sep="\s+",header=0).to_numpy()
-		print(type(arraydata))
-		# ...and removing the files.
-		# os.remove('dat/dynam.dat')
-		# os.remove('dat/radial.dat')
+		# Reading the saved data
+		arraydata, radarray = read_astra_results(dyn_file_name, rad_file_name, pd)
+		# If astra exited with an error, exit the programm
+	else:
+		print( 'Astra exited with error, closing the program' + '\n' + \
+			   '================================================')
+		exit()
+print('================================================\n')
 		
-		[time, r, prc, pre, pwcalc, pwexp, van, dan, vneo,
+# Process the results of the calculation
+[time, r, prc, pre, pwcalc, pwexp, van, dan, vneo,
 				dneo, nWtot, gradnW, grWvnW, pr_err] = as_processing(arraydata, radarray, dyndur, modelvars)
 
 
 #====File saving================================================================
 if flag  and execution_settings.saving_settings:
 	# Logging used settings
+	log_dir = 'dat/pylog'
+	make_dir(log_dir)
 	setfilesaver(astrastring, modelvars, anomvars, tm)
 
 if flag and execution_settings.saving_data:
 	# Saving results into file
-	file_descriptor='txt'
+	file_descriptor = 'txt'
+	data_dir        = 'dat/pydat'
+	make_dir(data_dir)
 	datfilesaver(file_descriptor, time, r, prc,
-	             pre, pwcalc, pwexp, van, dan, vneo, dneo, nWtot, gradnW, grWvnW, pr_err, tm, \
+	             pre, pwcalc, pwexp, van, dan, vneo, dneo, nWtot, gradnW, grWvnW, pr_err, tm,
               	 astrastring, modelvars, anomvars)
 
 #====Plotting===================================================================
@@ -294,14 +311,16 @@ if flag and execution_settings.plotting_flag:
 	timeplotter([2, 3, 6, 5, 0.5], times)
 
 #-------------------------------------------------------------------------------
-	# fig1 = pt.figure()
-	# pt.subplot(1,2,1)
-	# pt.plot([0, 3, 6, 9, 12, 15], pr_err)
-	# pt.xlabel('r, cm')
-	# pt.ylabel('S_0, %')
-	# pt.grid()
+
+	fig1 = pt.figure()
+	pt.subplot(1,2,1)
+	pt.plot([0, 3, 6, 9, 12, 15], pr_err)
+	pt.xlabel('r, cm')
+	pt.ylabel('S_0, %')
+	pt.grid()
 
 #-------------------------------------------------------------------------------
+
 	fig2 = pt.figure()
 	pt.subplot(2, 3, 3)
 	pt.plot(r, pwcalc, 'b-', label='Calculation')
@@ -336,7 +355,7 @@ if flag and execution_settings.plotting_flag:
 	pt.subplot(2, 3, 5)
 	vvdneo = vneo/dneo
 	vvdneo[0] = 0
-	#---------------------------------------------------------------------------
+
 	#---------------------------------------------------------------------------
 	pt.plot(r, vvdneo, label='vneo/dneo')
 	pt.plot(r, grWvnW, label='gradNW/NW')

@@ -6,7 +6,7 @@ def as_processing(arraydata, radarray, dyndur, modelvars):
 	#Ctreating vars
 	# Time and radius (in cm)
 	time = arraydata[:, 0]
-	r = 100*radarray[:, 0]
+	r    = 100*radarray[:, 0]
 	# Time evolution of Prad
 	prc = arraydata[:, 5:11]
 	pre = arraydata[:, 11:17]
@@ -28,7 +28,7 @@ def as_processing(arraydata, radarray, dyndur, modelvars):
 	#Getting indecies to cut out dynamics and plots
 	timedif1 = abs(time-float(modelvars.end_cneut))
 	timedif2 = abs(time-float(modelvars.end_cneut)-dyndur)
-	dynind = [timedif1.argsort()[0], timedif2.argsort()[0]]
+	dynind   = [timedif1.argsort()[0], timedif2.argsort()[0]]
 
 	# Fixing subroutine flaws
 	for i in range(len(pre)):

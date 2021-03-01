@@ -30,45 +30,45 @@ def datfilesaver(file_descriptor, time, r, prc, pre, pwcalc, pwexp, van, dan, vn
 	else:
 		filename = filename+'.' + file_descriptor
 		with open(filename, 'w') as f:
-			time_points=time.size
-			radial_points=r.size
-
+			time_points   = time.size
+			radial_points = r.size
+			data_format   = '%11.4E'
 
 		# Radius (in cm)
-			np.savetxt(f, r.reshape((-1, radial_points)), fmt="%10.5f",
+			np.savetxt(f, r.reshape((-1, radial_points)), fmt=data_format,
 			           header='Radius (in cm):', footer='#')
 		# Radial profiles of Prad
-			np.savetxt(f, pwcalc.reshape((-1, radial_points)), fmt="%10.5f",
+			np.savetxt(f, pwcalc.reshape((-1, radial_points)), fmt=data_format,
 			           header='Calculated radial profile of Prad:', footer='#')
-			np.savetxt(f, pwexp.reshape((-1, radial_points)), fmt="%10.5f",
+			np.savetxt(f, pwexp.reshape((-1, radial_points)), fmt=data_format,
 			           header='Experimental radial profile of Prad:', footer='#')
 		# Anomalous coefficients
 			np.savetxt(f, dan.reshape((-1, radial_points)),
-			           fmt="%10.5f", header='Anomalous diffusion:', footer='#')
+			           fmt=data_format, header='Anomalous diffusion:', footer='#')
 			np.savetxt(f, van.reshape((-1, radial_points)),
-			           fmt="%10.5f", header='Anomalous pinch:', footer='#')
+			           fmt=data_format, header='Anomalous pinch:', footer='#')
 		# Neoclassic coefficients
 			np.savetxt(f, dneo.reshape((-1, radial_points)),
-			           fmt="%10.5f", header='Neoclassic diffusion:', footer='#')
+			           fmt=data_format, header='Neoclassic diffusion:', footer='#')
 			np.savetxt(f, vneo.reshape((-1, radial_points)),
-			           fmt="%10.5f", header='Neoclassic pinch:', footer='#')
+			           fmt=data_format, header='Neoclassic pinch:', footer='#')
 		# W density profile
 			np.savetxt(f, nWtot.reshape((-1,radial_points)),
-			           fmt="%10.5f", header='Total impurity density:', footer='#')
+			           fmt=data_format, header='Total impurity density:', footer='#')
 
-			np.savetxt(f, gradnW.reshape((-1,radial_points)), fmt="%10.5f", header='gradnW:', footer='#')
-			np.savetxt(f, grWvnW.reshape((-1,radial_points)), fmt="%10.5f", header='grW/vnW:', footer='#')
+			np.savetxt(f, gradnW.reshape((-1,radial_points)), fmt=data_format, header='gradnW:', footer='#')
+			np.savetxt(f, grWvnW.reshape((-1,radial_points)), fmt=data_format, header='grW/vnW:', footer='#')
 
 			f.write('\n')
 
 		# Times
-			np.savetxt(f, time.reshape((1,time_points)), fmt="%10.5f", header='Times:', footer='#')
+			np.savetxt(f, time.reshape((1,time_points)), fmt=data_format, header='Times:', footer='#')
 		# Time evolution of Prad
 			prc_shaped = prc.reshape((time_points, -1))
-			np.savetxt(f, prc_shaped.transpose(), fmt="%10.5f",
+			np.savetxt(f, prc_shaped.transpose(), fmt=data_format,
 			           header='Calculated time evolution of Prad:', footer='#')
 			pre_shaped = pre.reshape((time_points, -1))
-			np.savetxt(f, pre_shaped.transpose(), fmt="%10.5f",
+			np.savetxt(f, pre_shaped.transpose(), fmt=data_format,
 			           header='Experimental time evolution of Prad:', footer='#')
 
 			f.write('\n')
@@ -78,4 +78,4 @@ def datfilesaver(file_descriptor, time, r, prc, pre, pwcalc, pwexp, van, dan, vn
 			f.write(data2save)
 
 
-	print('Data is be saved into file: '+filename + '\n')
+	print('Data is saved to file: '+filename + '\n')

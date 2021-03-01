@@ -6,13 +6,14 @@ Exp. data:      ec70358-onaxis-asex
 Param.file:     WC
 Start time:     0
 End time:       10
-In background:  No
+In background:  no
 
 ===Model parameters===
 initial CNEUT1 (CV4):                 0.348
 final   CNEUT1 (CV5):                 0.222
-TIME when the dynamics starts (CV6):  0.300
+TIME when the dynamics starts (CV6):  0.500
 Cycle with CNEUT autosampling:        No
+Name of dynamic parameter:            PRAD
 
 ===Transport variables===
 CF5  = 2.00
@@ -31,7 +32,7 @@ CF16 = 0.00
 ===Saving settings===
 Save modelling parameters: no
 Save calculation results:  yes
-Plot results:              yes
+Plot results:              no
 
 ===COMMENTS===
 End time is needed to start calculation,
