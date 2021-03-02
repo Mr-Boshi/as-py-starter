@@ -26,7 +26,7 @@ def dynreader(exp_file, search_key, dyn_start):
 			times.append(float(points) - old_start + dyn_start)
 			new_time_line += str(times[-1]) + ' '
 
-		dyn_duration   = times[-1] - dyn_start
+		dyn_duration   = round(times[-1] - dyn_start, 3)
 		file[iterator] = new_time_line + '\n'
 		with open('exp/'+exp_file, 'w') as f:
 			f.writelines(file)

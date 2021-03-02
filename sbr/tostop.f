@@ -33,17 +33,17 @@
          do J=1,NA1
             write(13,'(8(E11.5,1X))')
      >      AMETR(J),
-     >      CAR5(J),
+     >      CAR3(J),
      >      PRADX(J),
      >      CN(J),
      >      DN(J),
-     >      WORK(J,997)*1.e-4,
-     >      WORK(J,998)*1.e-2,
-     >      WORK(J,1052)
+     >      CAR7*1.e-4,
+     >      CAR8*1.e-2,
+     >      CAR5(J)
          enddo
          close(13)
       
-         print*,'Data saved in dynam.dat and radial.dat stored in /dat'
+         ! print*,'Data saved in dynam.dat and radial.dat stored in /dat'
 
 
 C          CALL OPENWT(12,'dat/flagfile',0,ier)

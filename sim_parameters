@@ -6,7 +6,7 @@ Exp. data:      ec70358-onaxis-asex
 Param.file:     WC
 Start time:     0
 End time:       10
-In background:  no
+In background:  yes
 
 ===Model parameters===
 initial CNEUT1 (CV4):                 0.348
@@ -32,7 +32,7 @@ CF16 = 0.00
 ===Saving settings===
 Save modelling parameters: no
 Save calculation results:  yes
-Plot results:              no
+Plot results:              yes
 
 ===COMMENTS===
 End time is needed to start calculation,

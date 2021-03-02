@@ -118,11 +118,11 @@ def cmd_print(astrastring):
 		key='No'
 
 	cmd_text= '================================================'                               + '\n' \
-			+ 'Astra-Strahl model name: '+astrastring.model                                    + '\n' \
-			+ 'Experimental data file:  '+astrastring.exp                                      + '\n' \
-			+ 'Strahl param.file:       '+astrastring.param                                    + '\n' \
-			+ 'Calculation limits:      '+astrastring.st_time + ' ... ' + astrastring.end_time + '\n' \
-			+ 'Background key:          '+key                                                  + '\n' \
+			+ 'Astra-Strahl model name:         '+astrastring.model                                    + '\n' \
+			+ 'Experimental data file:          '+astrastring.exp                                      + '\n' \
+			+ 'Strahl param.file:               '+astrastring.param                                    + '\n' \
+			+ 'Calculation limits:              '+astrastring.st_time + ' ... ' + astrastring.end_time + '\n' \
+			+ 'Background key:                  '+key                                                  + '\n' \
 			+ '================================================'
 
 	print(cmd_text)
@@ -274,7 +274,7 @@ print('================================================\n')
 		
 # Process the results of the calculation
 [time, r, prc, pre, pwcalc, pwexp, van, dan, vneo,
-				dneo, nWtot, gradnW, grWvnW, pr_err] = as_processing(arraydata, radarray, dyndur, modelvars)
+ dneo, nWtot, gradnW, grWvnW, pr_err, dynind] = as_processing(arraydata, radarray, dyndur, modelvars)
 
 
 #====File saving================================================================
@@ -295,20 +295,15 @@ if flag and execution_settings.saving_data:
 
 #====Plotting===================================================================
 if flag and execution_settings.plotting_flag:
-	#Getting indecies to cut out dynamics and plots
-	timedif1 = abs(time-float(modelvars.end_cneut)+0.02)
-	timedif2 = abs(time-float(modelvars.end_cneut)-dyndur-0.02)
-	times = [timedif1.argsort()[0], timedif2.argsort()[0]]
-
 	fig = pt.figure()  # an empty figure with no axes
 
 	fig.suptitle('W removal')  # Add a title so we know which it is
-	timeplotter([2, 3, 1, 0, 0], times)
-	timeplotter([2, 3, 2, 1, 0.1], times)
-	timeplotter([2, 3, 3, 2, 0.2], times)
-	timeplotter([2, 3, 4, 3, 0.3], times)
-	timeplotter([2, 3, 5, 4, 0.4], times)
-	timeplotter([2, 3, 6, 5, 0.5], times)
+	timeplotter([2, 3, 1, 0, 0],   dynind)
+	timeplotter([2, 3, 2, 1, 0.1], dynind)
+	timeplotter([2, 3, 3, 2, 0.2], dynind)
+	timeplotter([2, 3, 4, 3, 0.3], dynind)
+	timeplotter([2, 3, 5, 4, 0.4], dynind)
+	timeplotter([2, 3, 6, 5, 0.5], dynind)
 
 #-------------------------------------------------------------------------------
 
