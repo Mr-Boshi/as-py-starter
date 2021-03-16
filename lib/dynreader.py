@@ -1,3 +1,18 @@
+# Looking for the first line with $search_key in it
+def line_finder(file, search_key):
+	iterator = 0
+	found_line = None
+
+	for line in file:
+		found = line.find(search_key)
+		iterator += 1
+		if not found == -1:
+			found_line = file[iterator].split()
+			break
+	return [iterator, found_line]
+
+
+
 # Function to read dynamics from dyn/*
 def dynreader(exp_file, search_key, dyn_start):
 	# Reading exp-file
@@ -5,18 +20,10 @@ def dynreader(exp_file, search_key, dyn_start):
 		file = f.readlines()
 
 	# Looking for the first line with $search_key in it
-	iterator   = 0
-	times_line = 'Not found'
-
-	for line in file:
-		found = line.find(search_key)
-		iterator +=1
-		if not found == -1:
-			times_line=file[iterator].split()
-			break
+	[iterator, times_line] = line_finder(file, search_key)
 	
 	# If line is found, changing starting time
-	if times_line == 'Not found':
+	if times_line is None:
 		dyn_duration = 0.0
 	else:
 		old_start     = float(times_line[0])

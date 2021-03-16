@@ -1,30 +1,74 @@
-def modelsetting(model_name, modelvars, anomvars, dyndur, sys):						# Setting up the model
+def modelsetting(model_name, exp_file, modelvars, dyndur, transp_sett):						# Setting up the model
+	from lib.dynreader import line_finder
+
 	with open('equ/'+model_name, 'r') as f:
 		file = f.readlines()
 
-	# calculation settings
-	file[1] = 'CV4='+modelvars.init_cneut+';					! Initial CNEUT1' 					+ '\n'
-	file[2] = 'CV5='+modelvars.end_cneut+';						! Final   CNEUT1' 					+ '\n'
-	file[3] = 'CV6='+modelvars.dyn_start+';						! Start Dynamics' 					+ '\n'
-	file[4] = 'CV7='+str(dyndur)+';								! Duration of detaled calculation'	+ '\n'
+	rad_coeff_line = []
+	rad_search_keys = ['PRC0', 'PRC1', 'PRC2', 'PRC3', 'PRC4', 'PRC5',
+                    'PRE0', 'PRE1', 'PRE2', 'PRE3', 'PRE4', 'PRE5', 
+					'CV4=', 'CV5=', 'CV6=', 'CV7=',
+                    'CNEUT1=', 'CIMP4 =', 'DTOUT =', 'CV8=']
+	for word in rad_search_keys:
+		rad_coeff_line.append(line_finder(file, word)[0] - 1)
+	prc_lines = rad_coeff_line[0:6]
+	pre_lines = rad_coeff_line[6:12]
+	cv_lines  = rad_coeff_line[12:16]
+	par_lines = rad_coeff_line[16:20]
 
-	# Anomalous coefficients
-	if len(anomvars) < 12:
-		print('Unsufficient data to set anomalous transport. Should be 12 variables')
-		sys.exit()
-	else:
-		for i in range(12):
-			file[8+i]  = 'CF' + str(5+i) + ' = ' + anomvars[i]+';' + '\n'
+	# Calculation settings
+	file[cv_lines[0]] = 'CV4='+modelvars.init_cneut+';						! Initial CNEUT1' 					+ '\n'
+	file[cv_lines[1]] = 'CV5='+modelvars.end_cneut+';						! Final   CNEUT1' 					+ '\n'
+	file[cv_lines[2]] = 'CV6='+modelvars.dyn_start+';						! Start Dynamics' 					+ '\n'
+	file[cv_lines[3]] = 'CV7='+str(dyndur)+';								! Duration of detaled calculation'	+ '\n'
 
 	# Other settings
+	file[par_lines[0]] = 'CNEUT1= CV4+(CV5-CV4)*FJUMP(CV6+CIMP4)'										+ '\n'
+	file[par_lines[1]] = 'CIMP4=  0.01-0.009*FJUMP(CV6-0.01)+0.009*FJUMP(CV6+CV7+0.01)'					+ '\n'
+	file[par_lines[2]] = 'DTOUT=  CIMP4'																+ '\n'
+	file[par_lines[3]] = 'CV8=    2*CV6+CV7+2*CIMP4				! End time'								+ '\n'	
 
-	file[21] = '! TINIT	= 0.0;							! Start of recording (does not matter)'	+ '\n'
-	file[22] = '! TSCALE= 999;							! Recorded time interval'				+ '\n'
-	file[25] = 'DTOUT	= CIMP4'																+ '\n'
-	file[23] = 'CNEUT1	= CV4+(CV5-CV4)*FJUMP(CV6+CIMP4)'										+ '\n'
-	file[24] = 'CIMP4	= 0.01-0.009*FJUMP(CV6-0.01)+0.009*FJUMP(CV6+CV7+0.01)'					+ '\n'
-	file[27] = 'CV8		= 2*CV6+CV7+2*CIMP4				! End time'								+ '\n'				
-	file[28] = 'tostop:999:CV8:							! Closing astra'						+ '\n'
+	counter = 0
+	for line in prc_lines:
+		file[line] = 'PRC{0}_CAR3({1});\n'.format(
+			counter, transp_sett.output_radii[counter])
+		counter += 1
+
+	counter = 0
+	for line in pre_lines:
+		file[line] = 'PRE{0}_{1}X({2});\n'.format(
+			counter, modelvars.dynam_name, transp_sett.output_radii[counter])
+		counter += 1
+	
 
 	with open('equ/'+model_name, 'w') as f:
 		f.writelines(file)
+
+
+
+
+	# Anomalous coefficients
+	with open('exp/'+exp_file, 'r') as f:
+		file = f.readlines()
+
+	search_keys = ['CAR9', 'CAR10']
+	coeff_line=[]
+	for word in search_keys:
+		coeff_line.append(line_finder(file, word)[0])
+
+	dn_lines  = [coeff_line[0]+2, coeff_line[0]+3]
+	cn_lines  = [coeff_line[1]+2, coeff_line[1]+3]
+
+
+
+	file[dn_lines[0]] = transp_sett.radii + '\n'
+	file[cn_lines[0]] = transp_sett.radii + '\n'
+
+	file[dn_lines[1]] = transp_sett.an_dif +   '\n'
+	file[cn_lines[1]] = transp_sett.an_pinch + '\n'
+
+	with open('exp/test-asex', 'w') as f:
+		f.writelines(file)
+
+
+

@@ -1,5 +1,11 @@
 # Function to process astra results
+def get_dyn_indices(time, dyn_start, dyn_duration):
+	timedif1 = abs(time-float(dyn_start))
+	timedif2 = abs(time-float(dyn_start)-dyn_duration)
+	return [timedif1.argsort()[0], timedif2.argsort()[0]]
+
 def as_processing(arraydata, radarray, dyndur, modelvars):
+	from lib.classes import diffusion_coefficients, tungsten_data
 	import numpy as np
 	np.seterr(divide='ignore', invalid='ignore')
 	
@@ -9,12 +15,12 @@ def as_processing(arraydata, radarray, dyndur, modelvars):
 	r    = 100*radarray[:, 0]
 
 	# Time evolution of Prad
-	prc = arraydata[:, 5:11]
+	prc = arraydata[:,  5:11]
 	pre = arraydata[:, 11:17]
 
 	# Radial profiles of Prad
 	pwcalc = radarray[:, 1]
-	pwexp = radarray[:, 2]
+	pwexp  = radarray[:, 2]
 
 	# Anomalous coefficients
 	van = radarray[:, 3]
@@ -31,9 +37,7 @@ def as_processing(arraydata, radarray, dyndur, modelvars):
 	grWvnW = gradnW/nWtot
 
 	#Getting indecies to cut out dynamics and plots
-	timedif1 = abs(time-float(modelvars.dyn_start))
-	timedif2 = abs(time-float(modelvars.dyn_start)-dyndur)
-	dynind   = [timedif1.argsort()[0], timedif2.argsort()[0]]
+	dynind = get_dyn_indices(time, modelvars.dyn_start, dyndur)
 
 	# Fixing subroutine flaws
 	for i in range(1, len(pre)):
@@ -43,41 +47,14 @@ def as_processing(arraydata, radarray, dyndur, modelvars):
 	# Mean square error
 	pr_err = 100*(np.sum((prc[dynind[0]:dynind[1]]-pre[dynind[0]:dynind[1]])**2, 0)/len(prc[dynind[0]:dynind[1], 0]))**0.5
 
-	# Debug printing
+	nclass_coeffs = diffusion_coefficients(dneo, vneo)
+	anomal_coeffs = diffusion_coefficients(dan, van)
 
-	# print('time')
-	# print(time)
-	# print('r')
-	# print(r)
-	# print('prc')
-	# print(prc)
-	# print('pre')
-	# print(pre)
-	# print('pwcalc')
-	# print(pwcalc)
-	# print('pwexp')
-	# print(pwexp)
-	# print('van')
-	# print(van)
-	# print('dan')
-	# print(dan)
-	# print('vneo')
-	# print(vneo)
-	# print('dneo')
-	# print(dneo)
-	# print('nWtot')
-	# print(nWtot)
-	# print('gradnW')
-	# print(gradnW)
-	# print('grWvnW')
-	# print(grWvnW)
-	# print('timedif1')
-	# print(timedif1)
-	# print('timedif2')
-	# print(timedif2)
-	# print('dynind')
-	# print(dynind)
+	tungsten_exp   = tungsten_data(pwexp, pre)
+	tungsten_model = tungsten_data(pwcalc, prc, nWtot)
 
 
-	return [time, r, prc, pre, pwcalc, pwexp, van, dan, vneo, dneo, nWtot, gradnW, grWvnW, pr_err, dynind]
-
+	return [time, r,						\
+			tungsten_exp, tungsten_model,	\
+			anomal_coeffs, nclass_coeffs,	\
+			gradnW, grWvnW, pr_err, dynind]
