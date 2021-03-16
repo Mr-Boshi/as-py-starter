@@ -37,8 +37,8 @@
      >      PRADX(J),
      >      CN(J),
      >      DN(J),
-     >      CAR7*1.e-4,
-     >      CAR8*1.e-2,
+     >      CAR7(J)*1.e-4,
+     >      CAR8(J)*1.e-2,
      >      CAR5(J)
          enddo
          close(13)

@@ -1,32 +1,17 @@
 ! ============================== Dynamics setup ============================== c
-CV4=0.348;					! Initial CNEUT1
-CV5=0.222;						! Final   CNEUT1
-CV6=0.500;						! Start Dynamics
+CV4=0.0429;						! Initial CNEUT1
+CV5=0.0375;						! Final   CNEUT1
+CV6=0.250;						! Start Dynamics
 CV7=0.04;								! Duration of detaled calculation
 
 
-! ============================== Van Dan setup =============================== c
-CF5 = 2.00;
-CF6 = 0.40;
-CF7 = 1.20;
-CF8 = 1.00;
-CF9 = 1.60;
-CF10 = 0.00;
-CF11 = 0.23;
-CF12 = 0.07;
-CF13 = 3.00;
-CF14 = 0.29;
-CF15 = 0.06;
-CF16 = 0.00;
+! ============================ Calculation setup ============================= c
+CNEUT1= CV4+(CV5-CV4)*FJUMP(CV6+CIMP4)
+CIMP4= 0.01-0.009*FJUMP(CV6-0.01)+0.009*FJUMP(CV6+CV7+0.01)
+DTOUT= CIMP4
 
-! TINIT	= 0.0;							! Start of recording (does not matter)
-! TSCALE= 999;							! Recorded time interval
-CNEUT1	= CV4+(CV5-CV4)*FJUMP(CV6+CIMP4)
-CIMP4	= 0.01-0.009*FJUMP(CV6-0.01)+0.009*FJUMP(CV6+CV7+0.01)
-DTOUT	= CIMP4
+CV8=    2*CV6+CV7+2*CIMP4				! End time
 
-CV8		= 2*CV6+CV7+2*CIMP4				! End time
-tostop:999:CV8:							! Closing astra
 
 ! ================================== Summary ================================= c
 ! Experimental C_6 (cm-3):					CAR6X
@@ -39,16 +24,20 @@ tostop:999:CV8:							! Closing astra
 ! Modeled C_6 (cm-3):						CAR6
 ! Mean Neoclassic diffusion coefficient:	CAR7
 ! Mean Neoclassic pinch:					CAR8
-
+! Anomalous diffusion:						CAR9X
+! Anomalous pinch:							CAR10X
 
 ! =============================== Model starts =============================== c
 
+! ======================== Grid and equiligrium setup ======================== c
 NEQUIL=41
 
+! ========================== Main plasma parameters ========================== c
 NE:AS;	NE = NEX;
 TE:AS;	TE = CF1*TEX;
 TI:AS;	TI = TIX;
 
+! =========================== Neutrals calculation =========================== c
 NEUT:CIMP4
 
 ! ================================= Deutons ================================== c
@@ -56,20 +45,8 @@ NDEUT = NE-1.d-13*"WORK(J,1000)";
 NI    = NDEUT+1.d-13*"WORK(J,1001)";
 
 ! ===================== Anomalus transport coefficients ====================== c
-! Defaults: DN=CF9*(IPL/0.22)**1.5/NE/ZEF; CN=DN*grad(NE)/NE;
-
-CAR10=1/NE*(RHO/ABC)**2;
-DN=CF7*(CF5*CAR10+CF9*exp(-((RHO-CF10)/CF11)**2)+CF12);
-CN=CF7*(CF6*CAR10*grad(NE)/NE+CF13*exp(-((RHO-CF14)/CF15)**2)+CF16);
-
-! CAR6 = 0.1374*exp(-((RHO-0.1301)/0.01408)**2);
-! CAR7 = 0.2530*exp(-((RHO-0.1109)/0.02122)**2);
-! CAR8 = 0.2099*exp(-((RHO-0.2519)/0.166)**2);
-! DN   = 4*(CAR6+CAR7+CAR8);
-
-! CAR9  =  2.263*exp(-((RHO-0.1755)/0.02138)**2);
-! CAR10 = -2.902*exp(-((RHO-0.1216)/0.02599)**2);
-! CN    =  4*(CAR9+CAR10-XSTEP(0.7));
+DN = CAR9X+1*(1-FJUMP(CIMP4));
+CN = CAR10X+1*(1-FJUMP(CIMP4));
 
 ! ================================== STRAHL ================================== c
 gridstrahl(20135)::999:999:W
@@ -82,33 +59,31 @@ CU:EQ; CC=CNHR;	CU=CC
 ZEF="WORK(J,297)"+1*(1-FJUMP(CIMP4));
 
 ! ============================ Mean Dneo and Vneo ============================ c
-neomean(1, 997, 998):CIMP4: ! :999:999::D
+neomean(1, 997, 998):CIMP4:			! :999:999::D
 CAR7="WORK(J,997)"
 CAR8="WORK(J,998)"
 
 ! ============================= Radiation losses ============================= c
-rad_losses3(1112):CIMP4: ! :999:999::R ! :CIMP4:
-CAR1="WORK(J,1110)"      ! total Prad_W, W/cm3
-CAR2="WORK(J,1111)"      ! total Prad_C, W/cm3
+rad_losses3(1112):CIMP4:			! :999:999::R ! :CIMP4:
+CAR1="WORK(J,1110)"					! total Prad_W, W/cm3
+CAR2="WORK(J,1111)"					! total Prad_C, W/cm3
 
 ! ======================== Abelization of total Prads  ======================= c
 ! LOS-integrated Prad, [r W/cm2]
-abel_trans(CAR1, 1.d0, 1054):CIMP4:  ! :999:999::D;   Prad W
-abel_trans(CAR2, 1.d0, 1056):CIMP4:  ! :999:999::D;   Prad C
+abel_trans(CAR1, 1.d0, 1054):CIMP4:	! :999:999::D;   Prad W
+abel_trans(CAR2, 1.d0, 1056):CIMP4:	! :999:999::D;   Prad C
 
-CAR3 = "WORK(J,1054)"				 ! LOS-integrated Prad_W, r W/cm2
-CAR4 = "WORK(J,1056)"				 ! LOS-integrated Prad_C, r W/cm2
+CAR3 = "WORK(J,1054)"				! LOS-integrated Prad_W, r W/cm2
+CAR4 = "WORK(J,1056)"				! LOS-integrated Prad_C, r W/cm2
 
 ! =========================== Impurity densities  ============================ c
-Qlpf(1053,1052):CIMP4    ! Prad(Qabs, Wtot) = nWtot*1e6*NE*1e19*Qabs by Lisitsa
-!                          [nWtot]=cm-3; [Prad]=W*m3; [NE]=1e19m-3; [Prad]=W/cm3
-! CAR1="WORK(J,1052)"*NE*1.d19*"WORK(J,1053)"
+Qlpf(1053,1052):CIMP4    			! Prad(Qabs, Wtot) = nWtot*1e6*NE*1e19*Qabs by Lisitsa
+!									[nWtot]=cm-3; [Prad]=W*m3; [NE]=1e19m-3; [Prad]=W/cm3
 CAR5 = "WORK(J,1052)"
 CAR6 = "WORK(J,382)"
 
-! =========================== C6+ dynamics by CXRS =========================== c
-! CAR3=(7.1e-2*exp(-(time-CV6)/22.68e-3)+6.9e-2);
-! CAR4=(CAR3*FJUMP(CV6)+0.14*(1-FJUMP(CV6)))*(NE/NEC)
+! ========================== Closing Astra at CV8 ============================ c
+tostop:999:CV8:
 
 ! -------------------------------- Radial plot ------------------------------- c
 ! ================================ Display 1 ================================= c
@@ -154,109 +129,20 @@ C06\"WORK(J,381)"*1.e-13;
 C07\"WORK(J,382)"*1.e-13;
 
 ! ================================ Display 3 ================================= c
-C03\"WORK(J,379)"*1.e-13;
-C04\"WORK(J,380)"*1.e-13;
-C05\"WORK(J,381)"*1.e-13;
-C06\"WORK(J,382)"*1.e-13;
+_\;
+_\;
+_\;
+_\;
 
-W20\"WORK(J,320)"*1.e-13;
-W21\"WORK(J,321)"*1.e-13;
-W22\"WORK(J,322)"*1.e-13;
-W23\"WORK(J,323)"*1.e-13;
+_\;
+_\;
+_\;
+_\;
 
-W24\"WORK(J,324)"*1.e-13;
-W25\"WORK(J,325)"*1.e-13;
-W26\"WORK(J,326)"*1.e-13;
-W27\"WORK(J,327)"*1.e-13;
-
-W28\"WORK(J,328)"*1.e-13;
-W29\"WORK(J,329)"*1.e-13;
-W30\"WORK(J,330)"*1.e-13;
-W31\"WORK(J,331)"*1.e-13;
-
-! ================================ Display 4 ================================= c
-VW16\-"WORK(J,916)"*1.e-2;
-VW17\-"WORK(J,917)"*1.e-2;
-VW18\-"WORK(J,918)"*1.e-2;
-VW19\-"WORK(J,919)"*1.e-2;
-
-VW20\-"WORK(J,920)"*1.e-2;
-VW21\-"WORK(J,921)"*1.e-2;
-VW22\-"WORK(J,922)"*1.e-2;
-VW23\-"WORK(J,923)"*1.e-2;
-
-VW24\-"WORK(J,924)"*1.e-2;
-VW25\-"WORK(J,925)"*1.e-2;
-VW26\-"WORK(J,926)"*1.e-2;
-VW27\-"WORK(J,927)"*1.e-2;
-
-VW28\-"WORK(J,928)"*1.e-2;
-VW29\-"WORK(J,929)"*1.e-2;
-VW30\-"WORK(J,930)"*1.e-2;
-VW31\-"WORK(J,931)"*1.e-2;
-
-! ================================ Display 5 ================================= c
-DW16\"WORK(J,766)"*1.e-4;
-DW17\"WORK(J,767)"*1.e-4;
-DW18\"WORK(J,768)"*1.e-4;
-DW19\"WORK(J,769)"*1.e-4;
-
-DW20\"WORK(J,770)"*1.e-4;
-DW21\"WORK(J,771)"*1.e-4;
-DW22\"WORK(J,772)"*1.e-4;
-DW23\"WORK(J,773)"*1.e-4;
-
-DW24\"WORK(J,774)"*1.e-4;
-DW25\"WORK(J,775)"*1.e-4;
-DW26\"WORK(J,776)"*1.e-4;
-DW27\"WORK(J,777)"*1.e-4;
-
-DC03\"WORK(J,830)"*1.e-4;
-DC04\"WORK(J,831)"*1.e-4;
-DC05\"WORK(J,832)"*1.e-4;
-DC06\"WORK(J,833)"*1.e-4;
-
-! ================================ Display 6 ================================= c
-RW16\"WORK(J,466)";
-RW17\"WORK(J,467)";
-RW18\"WORK(J,468)";
-RW19\"WORK(J,469)";
-
-RW20\"WORK(J,470)";
-RW21\"WORK(J,471)";
-RW22\"WORK(J,472)";
-RW23\"WORK(J,473)";
-
-RW24\"WORK(J,474)";
-RW25\"WORK(J,475)";
-RW26\"WORK(J,476)";
-RW27\"WORK(J,477)";
-
-RW28\"WORK(J,478)";
-RW29\"WORK(J,479)";
-RW30\"WORK(J,480)";
-RW31\"WORK(J,481)";
-
-! ================================ Display 7 ================================= c
-SW16\"WORK(J,616)";
-SW17\"WORK(J,617)";
-SW18\"WORK(J,618)";
-SW19\"WORK(J,619)";
-
-SW20\"WORK(J,620)";
-SW21\"WORK(J,621)";
-SW22\"WORK(J,622)";
-SW23\"WORK(J,623)";
-
-SW24\"WORK(J,624)";
-SW25\"WORK(J,625)";
-SW26\"WORK(J,626)";
-SW27\"WORK(J,627)";
-
-SW28\"WORK(J,628)";
-SW29\"WORK(J,629)";
-SW30\"WORK(J,630)";
-SW31\"WORK(J,631)";
+_\;
+_\;
+_\;
+_\;
 
 _\;
 _\;
@@ -264,37 +150,29 @@ _\;
 _\;
 
 ! ------------------------------ Temporal plot ------------------------------- c
-!Ti0_TI(0);
-!Ni0_NI(0);
-
 Te0_TE(0);
 Ne0_NE(0);
 
 ZEF0_ZEF(0);
 CNEU_CNEUT1;
 
-!Ipl_IINT(CUB);
-!Upl_UPL(0);
+PRC0_CAR3(0);
+PRC1_CAR3(0.025);
 
-! NA1 == ABC (98 points == 0.3 m, 1 point is 0.003 m)
+PRC2_CAR3(0.05);
+PRC3_CAR3(0.075);
 
-PRC0_"WORK(1,1054)";
-PRC1_"WORK(7,1054)";
-
-PRC2_"WORK(14,1054)";
-PRC3_"WORK(21,1054)";
-
-PRC4_"WORK(28,1054)";
-PRC5_"WORK(34,1054)";
+PRC4_CAR3(0.10);
+PRC5_CAR3(0.125);
 
 PRE0_PRADX(0);
-PRE1_PRADX(0.0214);
+PRE1_PRADX(0.025);
 
-PRE2_PRADX(0.04286);
-PRE3_PRADX(0.06428);
+PRE2_PRADX(0.05);
+PRE3_PRADX(0.075);
 
-PRE4_PRADX(0.0857);
-PRE5_PRADX(0.1041);
+PRE4_PRADX(0.10);
+PRE5_PRADX(0.125);
 
 
 ! ========== Backup Van Dan setup for 70384 ==========c
@@ -310,3 +188,25 @@ PRE5_PRADX(0.1041);
 !CF14=0.29
 !CF15=0.06
 !CF16=0
+
+
+! ============== LAGACY STUFF ============== c
+! Defaults: DN=CF9*(IPL/0.22)**1.5/NE/ZEF; CN=DN*grad(NE)/NE;
+
+! CAR10=1/NE*(RHO/ABC)**2;
+! DN=CF7*(CF5*CAR10+CF9*exp(-((RHO-CF10)/CF11)**2)+CF12);
+! CN=CF7*(CF6*CAR10*grad(NE)/NE+CF13*exp(-((RHO-CF14)/CF15)**2)+CF16);
+
+! CAR6 = 0.1374*exp(-((RHO-0.1301)/0.01408)**2);
+! CAR7 = 0.2530*exp(-((RHO-0.1109)/0.02122)**2);
+! CAR8 = 0.2099*exp(-((RHO-0.2519)/0.166)**2);
+! DN   = 4*(CAR6+CAR7+CAR8);
+
+! CAR9  =  2.263*exp(-((RHO-0.1755)/0.02138)**2);
+! CAR10 = -2.902*exp(-((RHO-0.1216)/0.02599)**2);
+! CN    =  4*(CAR9+CAR10-XSTEP(0.7));
+
+! CAR1="WORK(J,1052)"*NE*1.d19*"WORK(J,1053)"
+! =========================== C6+ dynamics by CXRS =========================== c
+! CAR3=(7.1e-2*exp(-(time-CV6)/22.68e-3)+6.9e-2);
+DTOUT=  CIMP4
