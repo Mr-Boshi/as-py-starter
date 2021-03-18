@@ -59,7 +59,13 @@ def modelsetting(model_name, exp_file, modelvars, dyndur, transp_sett):						# S
 	dn_lines  = [coeff_line[0]+2, coeff_line[0]+3]
 	cn_lines  = [coeff_line[1]+2, coeff_line[1]+3]
 
+	points = len(transp_sett.radii.split())
+	if not points == len(transp_sett.an_dif.split()) == len(transp_sett.an_pinch.split()):
+		print('Anomalous transport oefficients ar not matching sizes. Exiting the program')
+		exit()
 
+	file[dn_lines[0]-3] = 'GRIDTYPE  18  POINTS {} NAMEXP  CAR9   NTIMES 1'.format(points) + '\n'
+	file[cn_lines[0]-3] = 'GRIDTYPE  18  POINTS {} NAMEXP  CAR10   NTIMES 1'.format(points) + '\n'
 
 	file[dn_lines[0]] = transp_sett.radii + '\n'
 	file[cn_lines[0]] = transp_sett.radii + '\n'
@@ -67,7 +73,7 @@ def modelsetting(model_name, exp_file, modelvars, dyndur, transp_sett):						# S
 	file[dn_lines[1]] = transp_sett.an_dif +   '\n'
 	file[cn_lines[1]] = transp_sett.an_pinch + '\n'
 
-	with open('exp/test-asex', 'w') as f:
+	with open('exp/' + exp_file, 'w') as f:
 		f.writelines(file)
 
 

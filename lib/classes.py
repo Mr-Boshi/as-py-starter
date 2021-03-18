@@ -69,6 +69,25 @@ class model_settings:
 		self.end_cneut  = str(new_cneuts[1])
 
 
+# Quality metrics
+class metrics:
+	def __init__(self):
+		self.max = None
+		self.min = None
+		self.mean = None
+		self.sum = None
+	def plot(self):
+		import matplotlib.pyplot as plot
+
+		fig, axs = plot.subplots(1, 3, sharey=True, tight_layout=True)
+		axs[0].bar([1, 2, 3, 4, 5, 6], self.max)
+		axs[1].bar([1, 2, 3, 4, 5, 6], self.min)
+		axs[2].bar([1, 2, 3, 4, 5, 6], self.mean)
+
+		plot.show()
+
+
+
 # Other settings
 class exec_settings:
 	def __init__(self, file, block_line):
@@ -77,6 +96,8 @@ class exec_settings:
 		self.saving_data     = text.booled(block_line+1)
 		self.plotting_flag   = text.booled(block_line+2)
 		self.auto_update     = text.booled(block_line+3)
+		self.log_dir         = text.split(block_line+4)
+		self.data_dir        = text.split(block_line+5)
 
 
 class diffusion_coefficients:

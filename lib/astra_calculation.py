@@ -25,8 +25,7 @@ def strahlcontrol(filename, os):
 
 
 # Function to start astra
-def startastra(modelvars, dynamics_duration, astrastring, tm, os):
-	from progress.spinner import MoonSpinner
+def startastra(modelvars, dynamics_duration, astrastring, tm, os, psutil, MoonSpinner):
 	from lib.processfinder import processfinder
 
 	low_cimp4 = [float(modelvars.dyn_start)-0.01,
@@ -50,7 +49,7 @@ def startastra(modelvars, dynamics_duration, astrastring, tm, os):
 		print('================================================')
 		process = astrastring.model + '.exe'
 		with MoonSpinner('Astra calculation in progress...  ') as bar:
-			while processfinder(process):
+			while processfinder(psutil, process):
 				tm.sleep(1)
 				bar.next()
 
@@ -62,7 +61,7 @@ def startastra(modelvars, dynamics_duration, astrastring, tm, os):
 	return flag
 
 
-def astra_calculation(astrastring, modelvars, transp_sett, dyndur, sys, tm, os):
+def astra_calculation(astrastring, modelvars, transp_sett, dyndur, sys, tm, os, psutil, MoonSpinner):
 	from lib.modelsetting import modelsetting
 	# Setting shtral.control file
 	strahlcontrol(astrastring.param, os)
@@ -74,5 +73,5 @@ def astra_calculation(astrastring, modelvars, transp_sett, dyndur, sys, tm, os):
 	cmd_print(astrastring)
 
 	# Starting Astra calculation.
-	flag = startastra(modelvars, dyndur, astrastring, tm, os)
+	flag = startastra(modelvars, dyndur, astrastring, tm, os, psutil, MoonSpinner)
 	return flag

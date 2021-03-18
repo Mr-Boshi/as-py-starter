@@ -1,7 +1,3 @@
-'''
-	Function to suggest CNEUT
-'''
-
 def suggester(modelvars, arraydata, dyndur):
 	from lib.as_processing import get_dyn_indices
 	from lib.classes import errors

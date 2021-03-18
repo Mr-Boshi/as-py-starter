@@ -1,13 +1,8 @@
 """
 	! Script to model tungsten removal with ASTRA+STRAHL
 
-	! Required packages:
-		* pandas
-		* numpy (included in pandas)
-		* scipy
-		* matplotlib
-		* progress
-		* psutil
+	! Install required packages by running
+	python -m pip install -r %current_dir%/requirements.txt
 	The example of script execution code:
 	python3 start_as.py settings_file
 
@@ -22,10 +17,15 @@
 ## Importing 3-d party packages
 import sys
 import os
+import json
+import psutil
 import pandas as pd
 import matplotlib.pyplot as pt
 import time as tm
-import json
+import numpy as np
+
+from progress.spinner import MoonSpinner
+from datetime import datetime as dtime
 
 ## Importing self-made packages
 from lib.as_processing 		import as_processing
@@ -34,11 +34,11 @@ from lib.setfilesaver  		import setfilesaver
 from lib.suggester     		import suggester
 from lib.dynreader     		import dynreader
 from lib.astra_calculation	import astra_calculation
+from lib.plotting	        import plotting
 
 
 ## Importing self-made classes
 from lib.classes import astra_settings, model_settings, exec_settings, transp_vars
-
 
 #---------------------------------------------------------------------------------------------------------------------------------------
 # Function to check if {dir} exists and create it if it doesn't
@@ -59,19 +59,6 @@ def read_astra_results(dyn_file_name, rad_file_name, pd):
 	return arraydata, radarray
 
 
-# Function to plot time evolution
-def timeplotter(subplot_settings, time, indices, model_dynamics, experimental_dynamics, plot_rad):
-	pt.subplot(subplot_settings[0], subplot_settings[1], subplot_settings[2])
-
-	pt.plot(time[indices[0]:indices[1]], model_dynamics[indices[0]:indices[1]], label='Calculation')
-	pt.plot(time[indices[0]:indices[1]], experimental_dynamics[indices[0]:indices[1]], label='Experiment')
-
-	pt.xlabel('time')
-	pt.ylabel('P_rad('+str(plot_rad)+')')
-	pt.legend()
-	pt.grid()
-
-
 def update_settings(settings_filename, new_cneuts):
 	with open(settings_filename, 'r') as f:
 		file = f.readlines()
@@ -87,22 +74,34 @@ def update_settings(settings_filename, new_cneuts):
 #---------------------------------------------------------------------------------------------------------------------------------------
 """ Script begins HERE ======================================================================================================================"""
 #---------------------------------------------------------------------------------------------------------------------------------------
+# Preallocating needed variables as floats
+time = r = gradnW = grWvnW = pr_err = float()
+
+
+# Files where tostop.f saves the data
+dyn_file_name = 'dat/dynam.dat'   # -- the time evolution
+rad_file_name = 'dat/radial.dat'  # -- the radial profiles
 
 
 # Clearing the console and removing results of the prevoius calculation
 os.system('clear')
-if os.path.isfile('dat/dynam.dat'):
-	os.remove('dat/dynam.dat')
-if os.path.isfile('dat/radial.dat'):
-	os.remove('dat/radial.dat')
-
-
-# Preallocating needed variables as floats
-time = r = prc = pre = pwcalc = pwexp = van = dan = vneo = dneo = nWtot = gradnW = grWvnW = pr_err = float()
+if os.path.isfile(dyn_file_name):
+	os.remove(dyn_file_name)
+if os.path.isfile(rad_file_name):
+	os.remove(rad_file_name)
 
 
 # Reading settings
-settings_filename = sys.argv[1]
+args = sys.argv
+if len(args) == 1:
+	print('Execute with a setting_file as the first parameter')
+	exit()
+elif os.path.isfile(args[1]):
+	settings_filename = args[1]
+else:
+	print('Setting_file was not found')
+	exit()
+
 with open(settings_filename, 'r') as f:
 	file = f.readlines()
 	header_lines = []
@@ -118,26 +117,24 @@ modelvars          = model_settings(file, header_lines[2])
 transp_sett        = transp_vars(file,    header_lines[3])
 execution_settings = exec_settings(file,  header_lines[4])
 
+
 # Reading dynamics duration from dyn/*
 dyndur = dynreader(astrastring.exp, modelvars.dynam_name, float(modelvars.dyn_start))
 
 
 # Starting astra calculation
-dyn_file_name = 'dat/dynam.dat'   # -- where the time evolution is saved
-rad_file_name = 'dat/radial.dat'  # -- where the radial profiles are saved
-
 print('\n================================================')
 if modelvars.cycle_key:
 	iteration = 1                 # -- cycle counter
 	print('Autosampling is on')
 	while True:
 		# Astra calculation
-		start_time = tm.time()
+		start_time = dtime.now()
 		flag       = astra_calculation(astrastring, modelvars, transp_sett,
-		                        		dyndur, sys, tm, os)
-		
+                                 dyndur, sys, tm, os, psutil, MoonSpinner)
+		eval_time = dtime.now() - start_time
 		print('\n================================================\n' +          \
-			  'Iteration {0} ended in {1} seconds\n'.format(iteration, round(tm.time()-start_time, 1)))
+                    'Iteration {0} ended in {1} seconds\n'.format(iteration, round(eval_time.seconds, 1)))
 
 		if flag:
 			# Reading the saved data
@@ -166,11 +163,12 @@ if modelvars.cycle_key:
 else:
 	print('Autosampling is off')
 	# Astra calculation
-	start_time = tm.time()
+	start_time = dtime.now()
 	flag = astra_calculation(astrastring, modelvars, transp_sett,
                         			 dyndur, sys, tm, os)
+	eval_time = dtime.now() - start_time
 	print('================================================\n' + \
-            'Calculation ended in {0} seconds'.format(round(tm.time()-start_time, 1)))
+            'Calculation ended in {0} seconds'.format(round(eval_time.seconds, 1)))
 
 	if flag:
 		# Reading the saved data
@@ -186,95 +184,25 @@ print('================================================\n')
 [time, r,
  tungsten_exp, tungsten_model,
  anomal_coeffs, nclass_coeffs,
- gradnW, grWvnW, pr_err, dynamics_indices] = as_processing(arraydata, radarray, dyndur, modelvars)
-
-# print(tungsten_model.density_dynamics[:,1])
+ gradnW, grWvnW, pr_err, dynamics_indices] = as_processing(np, arraydata, radarray, dyndur, modelvars)
 
 
 #====File saving================================================================
 if flag  and execution_settings.saving_settings:
 	# Logging used settings
-	log_dir = 'dat/pylog'
-	make_dir(log_dir)
-	setfilesaver(astrastring, modelvars, transp_sett)
+	make_dir(execution_settings.log_dir)
+	setfilesaver(json, dtime, os, astrastring, modelvars,
+	             transp_sett, execution_settings.log_dir)
 
 if flag and execution_settings.saving_data:
 	# Saving results into file
-	data_dir        = 'dat/pydat'
-	make_dir(data_dir)
-	datfilesaver(time, r, tungsten_exp, tungsten_model,
+	make_dir(execution_settings.data_dir)
+	datfilesaver(dtime, np, json, os, time, r, tungsten_exp, tungsten_model,
 				 anomal_coeffs, nclass_coeffs,
 	             gradnW, grWvnW, pr_err,
-              astrastring, modelvars)
+              astrastring, modelvars, execution_settings.data_dir)
 
 #====Plotting===================================================================
 if flag and execution_settings.plotting_flag:
-	fig = pt.figure()  # an empty figure with no axes
-
-	fig.suptitle('W removal')  # Add a title so we know which it is
-	radii = [0.00, 2.14, 4.286, 6.428, 8.57, 10.41]
-	for i in range(0,6):
-		timeplotter([2, 3, i+1], time, dynamics_indices,
-		            tungsten_model.density_dynamics[:, i], tungsten_exp.density_dynamics[:, i], radii[i])
-
-#-------------------------------------------------------------------------------
-
-	# fig1 = pt.figure()
-	# pt.subplot(1,2,1)
-	# pt.plot([0, 3, 6, 9, 12, 15], pr_err)
-	# pt.xlabel('r, cm')
-	# pt.ylabel('S_0, %')
-	# pt.grid()
-
-#-------------------------------------------------------------------------------
-
-	fig2 = pt.figure()
-	pt.subplot(2, 3, 3)
-	pt.plot(r, tungsten_model.radiation_losses, 'b-', label='Calculation')
-	pt.plot(r, tungsten_exp.radiation_losses, 'g-', label='Experiment')
-	pt.xlabel('r, cm')
-	pt.ylabel('P_rad')
-	pt.legend()
-	pt.grid()
-
-	pt.subplot(2, 3, 2)
-	pt.plot(r, anomal_coeffs.pinch, 'b-', label='Anomalous')
-	pt.plot(r, nclass_coeffs.pinch, 'g-', label='Neoclassic')
-	pt.xlabel('r, cm')
-	pt.ylabel('V')
-	pt.legend()
-	pt.grid()
-
-	pt.subplot(2, 3, 1)
-	pt.plot(r, anomal_coeffs.diffusion, 'b-', label='Anomalous')
-	pt.plot(r, nclass_coeffs.diffusion, 'g-', label='Neoclassic')
-	pt.xlabel('r, cm')
-	pt.ylabel('D')
-	pt.legend()
-	pt.grid()
-
-	pt.subplot(2, 3, 4)
-	pt.plot(r, tungsten_model.total_density)
-	pt.xlabel('r, cm')
-	pt.ylabel('nW')
-	pt.grid()
-
-	pt.subplot(2, 3, 5)
-	vvdneo = nclass_coeffs.pinch/nclass_coeffs.diffusion
-	vvdneo[0] = 0
-
-	#---------------------------------------------------------------------------
-	pt.plot(r, vvdneo, label='vneo/dneo')
-	pt.plot(r, grWvnW, label='gradNW/NW')
-	pt.xlabel('r, cm')
-	pt.ylabel('peaking factors')
-	pt.legend()
-	pt.grid()
-
-	pt.subplot(2, 3, 6)
-	pt.plot(r, tungsten_exp.radiation_losses/tungsten_model.radiation_losses)
-	pt.plot([0, 30], [1, 1], 'k--')
-	pt.ylabel('Prad_exp/Prad_calc')
-	pt.grid()
-
-	pt.show()
+	plotting(pt, transp_sett.output_radii, r, time, dynamics_indices, tungsten_model,
+	         tungsten_exp, anomal_coeffs, nclass_coeffs, grWvnW)

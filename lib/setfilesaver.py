@@ -1,11 +1,8 @@
 # Function to save input arguments into file
-def setfilesaver(astrastring, modelvars, transp_sett):
-	import json
-	from datetime import datetime as dtime
+def setfilesaver(json, dtime, os, astrastring, modelvars, transp_sett, log_dir):
 	# Saving input parameters to file
 	timndat = dtime.now().strftime('%Y.%m.%d_%H-%M-%S')
 	filename = timndat+' '+astrastring.exp+' '+astrastring.param+'.txt'
-	print('Input parameters will be saved into file: '+filename)
 
 	# Constructing sh command string
 
@@ -22,6 +19,8 @@ def setfilesaver(astrastring, modelvars, transp_sett):
 			transp_sett.an_dif       + '\n' + \
 			transp_sett.an_pinch     + '\n'
 
-	with open('dat/pylog/'+filename, 'a+') as f:
+	file_path = os.path.join(log_dir, filename)
+	with open(file_path, 'a+') as f:
 		f.write(data2save)
 
+	print('Input parameters saved into file: '+file_path)
