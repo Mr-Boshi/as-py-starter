@@ -4,44 +4,42 @@ def get_dyn_indices(time, dyn_start, dyn_duration):
 	timedif2 = abs(time-float(dyn_start)-dyn_duration)
 	return [timedif1.argsort()[0], timedif2.argsort()[0]]
 
-def as_processing(np, arraydata, radarray, dyndur, modelvars):
+def as_processing(np, arraydata, radarray, dyndur, modelvars, columns):
 	from lib.classes import diffusion_coefficients, tungsten_data, metrics
 	np.seterr(divide='ignore', invalid='ignore')
 	
+	_,y = radarray.shape
+	my_columns = {'Rad': np.empty(y), 'n_Wc': np.empty(y), 'n_Wx': np.empty(y),
+               'Prc': np.empty(y), 'Prx': np.empty(y), 'Van': np.empty(y), 
+			   'Dan': np.empty(y), 'Vnc': np.empty(y), 'Dnc': np.empty(y)}
+	for column in my_columns.keys():
+		my_index = columns.index(column)
+		my_columns[column] = radarray[:, my_index]
+
 	#Creating vars
-	# Time and radius (in cm)
+	# Time and Time evolution of Prad
 	time = arraydata[:, 0]
-	r    = 100*radarray[:, 0]
-
-	# Time evolution of Prad
-	prc = arraydata[:,  5:11]
-	pre = arraydata[:, 11:17]
-
-	# Radial profiles of Prad
-	pwcalc = radarray[:, 1]
-	pwexp  = radarray[:, 2]
-
-	# Anomalous coefficients
-	van = radarray[:, 3]
-	dan = radarray[:, 4]
-
-	# Neoclassic coefficients
-	vneo = radarray[:, 5]
-	dneo = radarray[:, 6]
-
-	# W density profile
-	nWtot = radarray[:, 7]
-
-	gradnW = np.gradient(nWtot)
-	grWvnW = gradnW/nWtot
-
-	#Getting indecies to cut out dynamics and plots
-	dynind = get_dyn_indices(time, modelvars.dyn_start, dyndur)
+	prc  = arraydata[:, 5:11]
+	pre  = arraydata[:, 11:17]
 
 	# Fixing subroutine flaws
 	for i in range(1, len(pre)):
 		if pre[i, 0] == 0:
 			pre[i, :] = pre[i-1, :]
+
+	# Radius
+	r = 100*my_columns['Rad']
+
+	# Transport coeffs
+	nclass_coeffs = diffusion_coefficients(my_columns['Dnc'], my_columns['Vnc'])
+	anomal_coeffs = diffusion_coefficients(my_columns['Dan'], my_columns['Van'])
+
+	# Tungsten data
+	tungsten_exp   = tungsten_data(my_columns['Prx'], pre, my_columns['n_Wx'])
+	tungsten_model = tungsten_data(my_columns['Prc'], prc, my_columns['n_Wc'])
+
+	#Getting indecies to cut out dynamics and plots
+	dynind = get_dyn_indices(time, modelvars.dyn_start, dyndur)
 
 	# Quality metric
 	prc_removal = prc[dynind[0]:dynind[1]]
@@ -50,9 +48,7 @@ def as_processing(np, arraydata, radarray, dyndur, modelvars):
 	difference_removal = prc_removal - pre_removal
 	relative_difference = abs(difference_removal / pre_removal)
 
-	# model_metrics = metrics()
-
-	array_length, array_points = relative_difference.shape
+	_, array_points = relative_difference.shape
 
 	error_max=[]
 	error_min=[]
@@ -62,23 +58,13 @@ def as_processing(np, arraydata, radarray, dyndur, modelvars):
 		error_min.append(min(relative_difference[:,i]))
 		error_mean.append(np.mean(relative_difference[:, i]))
 
-	model_metric = metrics()
-	model_metric.min = error_min
-	model_metric.max = error_max
-	model_metric.mean = error_mean
+	model_metric      = metrics()
+	model_metric.set(error_max, error_min, error_mean)
 
 
-	# pr_err = 100*(np.sum(((prc[dynind[0]:dynind[1]]-pre[dynind[0]:dynind[1]])/pre[dynind[0]:dynind[1]])**2, 0)/len(prc[dynind[0]:dynind[1], 0])))**0.5
-	pr_err = 0
-
-	nclass_coeffs = diffusion_coefficients(dneo, vneo)
-	anomal_coeffs = diffusion_coefficients(dan, van)
-
-	tungsten_exp   = tungsten_data(pwexp, pre)
-	tungsten_model = tungsten_data(pwcalc, prc, nWtot)
 
 
 	return [time, r,						\
 			tungsten_exp, tungsten_model,	\
 			anomal_coeffs, nclass_coeffs,	\
-         gradnW, grWvnW, model_metric, dynind]
+         	model_metric, dynind]

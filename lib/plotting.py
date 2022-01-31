@@ -13,11 +13,13 @@ def timeplotter(pt, subplot_settings, time, indices, model_dynamics, experimenta
 	pt.grid()
 
 
-def plotting(pt, radii, r, time, dynamics_indices, tungsten_model, tungsten_exp, anomal_coeffs, nclass_coeffs, grWvnW):
+def plotting(pt, radii, r, time, dynamics_indices, tungsten_model, tungsten_exp, anomal_coeffs, nclass_coeffs):
+	
 	fig = pt.figure()  # an empty figure with no axes
 	fig.suptitle('W removal')  # Add a title so we know which it is
+	j = [1, 2, 5, 6, 9, 10]
 	for i in range(0, 6):
-			timeplotter(pt, [2, 3, i+1], time, dynamics_indices,
+			timeplotter(pt, [3, 4, j[i]], time, dynamics_indices,
 			            tungsten_model.density_dynamics[:, i], tungsten_exp.density_dynamics[:, i], radii[i])
 
 	#-------------------------------------------------------------------------------
@@ -31,8 +33,7 @@ def plotting(pt, radii, r, time, dynamics_indices, tungsten_model, tungsten_exp,
 
 	#-------------------------------------------------------------------------------
 
-	fig2 = pt.figure()
-	pt.subplot(2, 3, 3)
+	pt.subplot(3, 4, 3)
 	pt.plot(r, tungsten_model.radiation_losses, 'b-', label='Calculation')
 	pt.plot(r, tungsten_exp.radiation_losses, 'g-', label='Experiment')
 	pt.xlabel('r, cm')
@@ -40,7 +41,7 @@ def plotting(pt, radii, r, time, dynamics_indices, tungsten_model, tungsten_exp,
 	pt.legend()
 	pt.grid()
 
-	pt.subplot(2, 3, 2)
+	pt.subplot(3, 4, 4)
 	pt.plot(r, anomal_coeffs.pinch, 'b-', label='Anomalous')
 	pt.plot(r, nclass_coeffs.pinch, 'g-', label='Neoclassic')
 	pt.xlabel('r, cm')
@@ -48,7 +49,7 @@ def plotting(pt, radii, r, time, dynamics_indices, tungsten_model, tungsten_exp,
 	pt.legend()
 	pt.grid()
 
-	pt.subplot(2, 3, 1)
+	pt.subplot(3, 4, 7)
 	pt.plot(r, anomal_coeffs.diffusion, 'b-', label='Anomalous')
 	pt.plot(r, nclass_coeffs.diffusion, 'g-', label='Neoclassic')
 	pt.xlabel('r, cm')
@@ -56,28 +57,34 @@ def plotting(pt, radii, r, time, dynamics_indices, tungsten_model, tungsten_exp,
 	pt.legend()
 	pt.grid()
 
-	pt.subplot(2, 3, 4)
+	pt.subplot(3, 4, 8)
 	pt.plot(r, tungsten_model.total_density)
 	pt.xlabel('r, cm')
 	pt.ylabel('nW')
 	pt.grid()
 
-	pt.subplot(2, 3, 5)
+	pt.subplot(3, 4, 11)
 	vvdneo = nclass_coeffs.pinch/nclass_coeffs.diffusion
 	vvdneo[0] = 0
 
-	#---------------------------------------------------------------------------
 	pt.plot(r, vvdneo, label='vneo/dneo')
-	pt.plot(r, grWvnW, label='gradNW/NW')
+	pt.plot(r, tungsten_model.grW_nW, label='gradNW/NW')
 	pt.xlabel('r, cm')
 	pt.ylabel('peaking factors')
 	pt.legend()
 	pt.grid()
 
-	pt.subplot(2, 3, 6)
-	pt.plot(r, tungsten_exp.radiation_losses/tungsten_model.radiation_losses)
-	pt.plot([0, 30], [1, 1], 'k--')
-	pt.ylabel('Prad_exp/Prad_calc')
-	pt.grid()
+	ax = fig.add_subplot(3, 4, 12)
+	fraction = tungsten_exp.radiation_losses/tungsten_model.radiation_losses
+	ax.plot(r, fraction)
+	ax.plot([0, 30], [1, 1], 'k--')
+	ax.set_xlim([0, 15])
+	ax.set_ylim([0.8, 1.2])
+	ax.set_ylabel('Prad_exp/Prad_calc')
+	ax.grid(True)
 
+	pt.savefig('dat/pyplot/test.png', format='png')
 	pt.show()
+
+
+

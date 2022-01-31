@@ -1,6 +1,5 @@
 def datfilesaver(dtime, np, json, os, time, r, tungsten_exp, tungsten_model,
-				 anomal_coeffs, nclass_coeffs,
-				 gradnW, grWvnW, pr_err,
+				 anomal_coeffs, nclass_coeffs, pr_err,
                  astrastring, modelvars, data_dir):
 
 	# Setting savefile name
@@ -38,8 +37,10 @@ def datfilesaver(dtime, np, json, os, time, r, tungsten_exp, tungsten_model,
 		np.savetxt(f, tungsten_model.total_density.reshape((-1, radial_points)),
 				   fmt=data_format, header='Total impurity density:', footer='#')
 
-		np.savetxt(f, gradnW.reshape((-1,radial_points)), fmt=data_format, header='gradnW:', footer='#')
-		np.savetxt(f, grWvnW.reshape((-1,radial_points)), fmt=data_format, header='grW/vnW:', footer='#')
+		np.savetxt(f, tungsten_model.grad_nW.reshape((-1, radial_points)),
+		           fmt=data_format, header='gradnW:', footer='#')
+		np.savetxt(f, tungsten_model.grW_nW.reshape((-1, radial_points)),
+		           fmt=data_format, header='grW/vnW:', footer='#')
 
 		f.write('\n')
 

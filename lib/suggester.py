@@ -7,7 +7,6 @@ def suggester(modelvars, arraydata, dyndur):
 	pre  = arraydata[:, 11]
 
 	prc_central = arraydata[:, 10]
-	pre_central = arraydata[:, 16]
 
 	#Getting indecies to cut out dynamics and plots
 	dynamics_indices = get_dyn_indices(time, modelvars.dyn_start, dyndur)

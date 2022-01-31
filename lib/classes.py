@@ -84,7 +84,13 @@ class metrics:
 		axs[1].bar([1, 2, 3, 4, 5, 6], self.min)
 		axs[2].bar([1, 2, 3, 4, 5, 6], self.mean)
 
-		plot.show()
+		return axs
+		# plot.show()
+	
+	def set(self, _max, _min, _mean):
+		self.max  = _max
+		self.min  = _min
+		self.mean = _mean
 
 
 
@@ -95,9 +101,11 @@ class exec_settings:
 		self.saving_settings = text.booled(block_line)
 		self.saving_data     = text.booled(block_line+1)
 		self.plotting_flag   = text.booled(block_line+2)
-		self.auto_update     = text.booled(block_line+3)
-		self.log_dir         = text.split(block_line+4)
-		self.data_dir        = text.split(block_line+5)
+		self.saving_plot     = text.booled(block_line+3)
+		self.auto_update     = text.booled(block_line+4)
+		self.log_dir         = text.split(block_line+5)
+		self.data_dir        = text.split(block_line+6)
+		self.plot_dir        = text.split(block_line+7)
 
 
 class diffusion_coefficients:
@@ -107,9 +115,12 @@ class diffusion_coefficients:
 
 class tungsten_data:
 	def __init__(self, radiation_losses, density_dynamics, total_density=None):
+		import numpy as np
 		self.radiation_losses = radiation_losses
 		self.total_density    = total_density
 		self.density_dynamics = density_dynamics
+		self.grad_nW = np.gradient(self.total_density)
+		self.grW_nW = self.grad_nW / self.total_density
 
 
 # Function to read anomalous transport coefficients
@@ -117,7 +128,7 @@ class transp_vars:
 	def __init__(self, file, block_line):
 		text = line_process(file)
 		raw_line = text.split(block_line)
-		extras = '[],\{\}()'
+		extras = r'[],{}()'
 		for letter in extras:
 			raw_line = raw_line.replace(letter, '')
 		self.output_radii = raw_line.split(' ')
@@ -141,3 +152,5 @@ class errors:
 		min_ar = min(arg1, arg2)
 		self.error = max_ar/min_ar
 		self.rel_error = self.error - 1
+
+	

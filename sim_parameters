@@ -1,4 +1,7 @@
-===start_as script parameters===please do not change the line order===
+===Example parameters file name===
+Description goes here.
+Please do not change the line order!
+Blocks are defined by triple equal sign
 
 ===Astra parameters===
 Model name:     strWC-ec-asml
@@ -6,11 +9,11 @@ Exp. data:      ec70358-onaxis-asex
 Param.file:     WC
 Start time:     0
 End time:       10
-In background:  no
+In background:  yes
 
 ===Model parameters===
-initial CNEUT1 (CV4):                 0.0429
-final   CNEUT1 (CV5):                 0.0375
+initial CNEUT1 (CV4):                 0.1234
+final   CNEUT1 (CV5):                 0.1091
 TIME when the dynamics starts (CV6):  0.250
 Cycle with CNEUT autosampling:        yes
 Acceptable relative difference:       0.03
@@ -19,17 +22,19 @@ Name of dynamic parameter:            PRAD
 ===Calculation settings===
 Radii to output dynamics (6 floats, in meters): [0, 0.025, 0.05, 0.075, 0.10, 0.125]
 Anomalous coefficients (same size, separated by _space_):
-Radii:  0.000    0.030   0.060  0.090   0.120   0.150   0.180  0.210  0.240  0.270   0.300
-D_an:   2.0038   1.9778  1.904  1.7965  1.6756  1.563   1.4753 1.4272 1.4562 1.6941  2.468
-V_an:   0.0000  -0.0016 -0.014 -0.0456 -0.0947 -0.1261 -0.0374 0.3949 1.2124 1.0358 -1.453
+Radii:  0.000  0.010  0.020  0.030  0.040  0.050  0.060  0.070  0.080  0.090  0.100  0.110  0.120  0.130  0.140  0.150  0.160  0.170  0.180  0.190  0.200  0.210  0.220  0.230  0.240  0.250  0.260  0.270  0.280  0.290  0.300
+D_an:   2.0538 2.021 1.9922 1.9778 1.958 1.9332 1.904 1.871 1.835 1.7965 1.7566 1.716 1.6756 1.6362 1.5984 1.563 1.5304 1.5009 1.4753 1.4539 1.4376 1.4272 1.4251 1.4334 1.4562 1.5006 1.5757 1.6941 1.8744 2.1379 2.468
+V_an:   0.0000 0.000 -0.0004 -0.0016 -0.0039 -0.0079 -0.014 -0.0221 -0.0325 -0.0456 -0.061 -0.0775 -0.0947 -0.1112 -0.1233 -0.1261 -0.1169 -0.091 -0.0374 0.0565 0.1995 0.3949 0.6486 0.9411 1.2124 1.3898 1.3771 1.0358 0.1993 -0.8983 -1.453
 
 ===Saving settings===
-Save modelling parameters:              No
-Save calculation results:               No
-Plot results:                           No
+Save modelling parameters:              y
+Save calculation results:               y
+Show Plots:                         	y
+Save Plots:								y
 Autoupdate settings while autosampling: yes
 Directory to log:                       dat/pylog
 Directory for data:                     dat/pydat
+Directory for plots:					dat/pyplot
 
 
 ===COMMENTS===

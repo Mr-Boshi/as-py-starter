@@ -1,132 +1,140 @@
 ! ============================== Dynamics setup ============================== c
-CV4=0.0429;						! Initial CNEUT1
-CV5=0.0375;						! Final   CNEUT1
-CV6=0.250;						! Start Dynamics
-CV7=0.04;								! Duration of detaled calculation
-
+CV4 = 0.1234;													! Initial CNEUT1
+CV5 = 0.1091;													! Final   CNEUT1
+CV6 = 0.250;													! Start Dynamics
+CV7 = 0.04;									   ! Duration of detaled calculation
+ 
+! =============================== Astra setup ================================ c
+ZRD0 = 1;									 ! Flag to store Atomic Data to WORK
+ZRD1 = 1;								! Flag to store neoclass. coeffs to WORK
+ZRD2 = 300;					   ! Index of WORK to start to save impurity density
+ZRD3 = 297;						! Index of WORK to save Zeff, sum(z*nz), sum(nz)
 
 ! ============================ Calculation setup ============================= c
-CNEUT1= CV4+(CV5-CV4)*FJUMP(CV6+CIMP4)
-CIMP4= 0.01-0.009*FJUMP(CV6-0.01)+0.009*FJUMP(CV6+CV7+0.01)
-DTOUT= CIMP4
+CNEUT1 = CV4+(CV5-CV4)*FJUMP(CV6+CIMP4)
+CIMP4  = 0.01-0.009*FJUMP(CV6-0.01)+0.009*FJUMP(CV6+CV7+0.01)!
+DTOUT  = CIMP4
 
-CV8=    2*CV6+CV7+2*CIMP4				! End time
-
+CV8    = 2*CV6+CV7+2*CIMP4											  ! End time
 
 ! ================================== Summary ================================= c
-! Experimental C_6 (cm-3):					CAR6X
-! Experimental Prad_W (W/m2):				PRAD
-! Modeled Prad_W (W/cm3):					CAR1
-! Modeled Prad_C (W/cm3):					CAR2
-! Modeled Prad_W (W/cm2):					CAR3
-! Modeled Prad_C (W/cm2):					CAR4
-! Modeled W_tot (cm-3):						CAR5
-! Modeled C_6 (cm-3):						CAR6
-! Mean Neoclassic diffusion coefficient:	CAR7
-! Mean Neoclassic pinch:					CAR8
-! Anomalous diffusion:						CAR9X
-! Anomalous pinch:							CAR10X
+! Experimental C_6 (cm-3):_________________________________________________CAR6X
+! Experimental Prad_W (W/m2):_______________________________________________PRAD
+! Modeled Prad_W (W/cm3):___________________________________________________CAR1
+! Modeled Prad_C (W/cm3):___________________________________________________CAR2
+! Modeled Prad_W (W/cm2):___________________________________________________CAR3
+! Modeled Prad_C (W/cm2):___________________________________________________CAR4
+! Modeled W_tot (cm-3):_____________________________________________________CAR5
+! Modeled C_6 (cm-3):_______________________________________________________CAR6
+! Mean Neoclassic diffusion coefficient:____________________________________CAR7
+! Mean Neoclassic pinch:____________________________________________________CAR8
+! Anomalous diffusion:_____________________________________________________CAR9X
+! Anomalous pinch:________________________________________________________CAR10X
 
-! =============================== Model starts =============================== c
+
+
+! ============================================================================ c
+! =============================== MODEL STARTS =============================== c
+! ============================================================================ c
 
 ! ======================== Grid and equiligrium setup ======================== c
-NEQUIL=41
+NEQUIL=41.41
 
 ! ========================== Main plasma parameters ========================== c
 NE:AS;	NE = NEX;
-TE:AS;	TE = CF1*TEX;
+TE:AS;	TE = TEX;
 TI:AS;	TI = TIX;
 
 ! =========================== Neutrals calculation =========================== c
 NEUT:CIMP4
 
-! ================================= Deutons ================================== c
-NDEUT = NE-1.d-13*"WORK(J,1000)";
-NI    = NDEUT+1.d-13*"WORK(J,1001)";
-
 ! ===================== Anomalus transport coefficients ====================== c
-DN = CAR9X+1*(1-FJUMP(CIMP4));
+DN = CAR9X +1*(1-FJUMP(CIMP4));
 CN = CAR10X+1*(1-FJUMP(CIMP4));
 
 ! ================================== STRAHL ================================== c
 gridstrahl(20135)::999:999:W
 grid_circular(20134,time,RTOR,ABC,BTOR,CV1,CV2,UPL):999:999:999:B
-as7_strahl4b(1,1,300,297):CIMP4:::
+as7_strahl4b(int(ZRD0), int(ZRD1), int(ZRD2), int(ZRD3)):CIMP4:::
 CU:EQ; CC=CNHR;	CU=CC
 
-! =================================== Zeff =================================== c
-! 297 - Zeff; 298 -  sum(z*nz) 299 -- sum(nz)
-ZEF="WORK(J,297)"+1*(1-FJUMP(CIMP4));
+! ============================= Zeff end Deutons ============================= c
+! ZRD3 - Zeff;				 ZRD3+1 -  sum(z*nz);			  ZRD3+2 -- sum(nz);
+ZEF   = "WORK(J,int(ZRD3))"+1*(1-FJUMP(CIMP4));
+NDEUT = NE-1.d-13*"WORK(J,int(ZRD3)+1)";
+NI    = NDEUT+1.d-13*"WORK(J,int(ZRD3)+2)";
 
 ! ============================ Mean Dneo and Vneo ============================ c
-neomean(1, 997, 998):CIMP4:			! :999:999::D
-CAR7="WORK(J,997)"
-CAR8="WORK(J,998)"
+neomean(1, 997, 998, int(ZRD2), int(ZRD0), int(ZRD1)):CIMP4:	   ! :999:999::D
+CAR7 = "WORK(J,997)"
+CAR8 = "WORK(J,998)"
 
 ! ============================= Radiation losses ============================= c
-rad_losses3(1112):CIMP4:			! :999:999::R ! :CIMP4:
-CAR1="WORK(J,1110)"					! total Prad_W, W/cm3
-CAR2="WORK(J,1111)"					! total Prad_C, W/cm3
+rad_losses3(1112):CIMP4:								 ! :999:999::R ! :CIMP4:
+CAR1 = "WORK(J,1110)"									   ! total Prad_W, W/cm3
+CAR2 = "WORK(J,1111)"									   ! total Prad_C, W/cm3
 
 ! ======================== Abelization of total Prads  ======================= c
 ! LOS-integrated Prad, [r W/cm2]
-abel_trans(CAR1, 1.d0, 1054):CIMP4:	! :999:999::D;   Prad W
-abel_trans(CAR2, 1.d0, 1056):CIMP4:	! :999:999::D;   Prad C
+abel_trans(CAR1, 1.d0, 1054):CIMP4:						 ! :999:999::D;   Prad W
+abel_trans(CAR2, 1.d0, 1056):CIMP4:						 ! :999:999::D;   Prad C
 
-CAR3 = "WORK(J,1054)"				! LOS-integrated Prad_W, r W/cm2
-CAR4 = "WORK(J,1056)"				! LOS-integrated Prad_C, r W/cm2
+CAR3 = "WORK(J,1054)"							! LOS-integrated Prad_W, r W/cm2
+CAR4 = "WORK(J,1056)"							! LOS-integrated Prad_C, r W/cm2
 
 ! =========================== Impurity densities  ============================ c
-Qlpf(1053,1052):CIMP4    			! Prad(Qabs, Wtot) = nWtot*1e6*NE*1e19*Qabs by Lisitsa
-!									[nWtot]=cm-3; [Prad]=W*m3; [NE]=1e19m-3; [Prad]=W/cm3
+! Prad(Qabs, Wtot) = nWtot*1e6*NE*1e19*Qabs by Lisitsa
+! [nWtot]=cm-3; [Prad]=W*m3; [NE]=1e19m-3; [Prad]=W/cm3
+
+Qlpf(1053,1052):CIMP4
 CAR5 = "WORK(J,1052)"
 CAR6 = "WORK(J,382)"
 
 ! ========================== Closing Astra at CV8 ============================ c
 tostop:999:CV8:
 
-! -------------------------------- Radial plot ------------------------------- c
+! ------------------------------- Radial plots ------------------------------- c
 ! ================================ Display 1 ================================= c
-N_E\NE\-1;																		! 1. N_e
-D_N\DN;																			! 2. Anomal. diffusion
+N_E \NE\-1;																		! 1. N_e
+D_N \DN;																		! 2. Anomal. diffusion
 ZEFF\ZEF+1.e-10;																! 3. Z_eff
 Wtlp\CAR5/(CAR5(0)+1.d-9);														! 4. Profile P_rad_W, model
 
 Wttl\CAR5*1.e-13;																! 5. sum(N_w)
-T_E\TE\-2;																		! 6. T_e
-C6\CAR6*1.e-13\\CAR6X\-4;														! 7. N_C6
-Pch\CAR3\-3;																	! 8. P_rad_W, model (W/cm2)
+T_E \TE\-2;																		! 6. T_e
+C6  \CAR6*1.e-13\\CAR6X\-4;														! 7. N_C6
+Pch \CAR3\-3;																	! 8. P_rad_W, model (W/cm2)
 
-D\NI\-1;																		! 1. N_D
-C_N\-CN;																		! 2. Anomal. pinch
-_\;																				! 3. 
+D   \NI\-1;																		! 1. N_D
+C_N \-CN;																		! 2. Anomal. pinch
+_   \;																			! 3. 
 Wtlp\PRADX/(PRADX(0)+1.d-9);													! 4. Profile P_rad_W, exp
 
-_\;																				! 5. 
-T_I\TI\-2;																		! 6. T_i
-_\;																				! 7. 
+_   \;																			! 5. 
+T_I \TI\-2;																		! 6. T_i
+_   \;																			! 7. 
 Pcht\PRADX\-3;																	! 8. P_rad_W, exp (W/cm2)
 
 ! ================================ Display 2 ================================= c
 Wrad\"WORK(J,1178)";
 Crad\"WORK(J,1188)";
-VnDn\"WORK(J,998)"*-1.e+2/("WORK(J,997)"+1.e-10)\-5;
-Dneo\"WORK(J,997)"*1.e-4;
+VnDn\CAR8*-1.e+2/(CAR7+1.e-10)\-5;
+Dneo\CAR7*1.e-4;
 
 AXUV\CAR5;
 Prad\"WORK(J,1057)";
-C00\"WORK(J,375)"*1.e-13;
-C01\"WORK(J,376)"*1.e-13;
+C00 \"WORK(J,375)"*1.e-13;
+C01 \"WORK(J,376)"*1.e-13;
 
-C02\"WORK(J,377)"*1.e-13;
-C03\"WORK(J,378)"*1.e-13;
+C02 \"WORK(J,377)"*1.e-13;
+C03 \"WORK(J,378)"*1.e-13;
 grWW\-grad(CAR1)/(CAR1+1.e-10)\-5;
-Vneo\"WORK(J,998)"*1.e-2;
+Vneo\CAR8*1.e-2;
 
-C04\"WORK(J,379)"*1.e-13;
-C05\"WORK(J,380)"*1.e-13;
-C06\"WORK(J,381)"*1.e-13;
-C07\"WORK(J,382)"*1.e-13;
+C04 \"WORK(J,379)"*1.e-13;
+C05 \"WORK(J,380)"*1.e-13;
+C06 \"WORK(J,381)"*1.e-13;
+C07 \"WORK(J,382)"*1.e-13;
 
 ! ================================ Display 3 ================================= c
 _\;
@@ -149,6 +157,8 @@ _\;
 _\;
 _\;
 
+
+! ---------------------------------------------------------------------------- c
 ! ------------------------------ Temporal plot ------------------------------- c
 Te0_TE(0);
 Ne0_NE(0);
@@ -209,4 +219,4 @@ PRE5_PRADX(0.125);
 ! CAR1="WORK(J,1052)"*NE*1.d19*"WORK(J,1053)"
 ! =========================== C6+ dynamics by CXRS =========================== c
 ! CAR3=(7.1e-2*exp(-(time-CV6)/22.68e-3)+6.9e-2);
-DTOUT=  CIMP4
+! CAR11=PRAD;						! Setting radiation data from exp-file
