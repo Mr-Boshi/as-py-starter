@@ -21,21 +21,16 @@
 ## Importing 3-d party packages
 import sys
 import os
-import json
-import psutil
 import pandas as pd
 import matplotlib.pyplot as pt
 import time as tm
 import numpy as np
-
-from datetime import datetime as dtime
 
 ## Importing self-made packages
 from lib.as_processing 		import as_processing
 from lib.datfilesaver  		import datfilesaver
 from lib.setfilesaver  		import setfilesaver
 from lib.suggester     		import suggester
-from lib.dynreader     		import dynreader
 from lib.astra_calculation	import astra_calculation
 from lib.plotting	        import plotting
 
@@ -61,9 +56,9 @@ def read_astra_results(dyn_file_name, rad_file_name, pd):
 
 	return arraydata.to_numpy(), radarray.to_numpy(), list(radarray.columns.to_numpy())
 
-
+# Update the CNEUTS in settings
 def update_settings(settings_filename, new_cneuts):
-	from lib.dynreader import line_finder
+	from lib.line_finder import line_finder
 
 	with open(settings_filename, 'r') as f:
 		file = f.readlines()
@@ -75,7 +70,7 @@ def update_settings(settings_filename, new_cneuts):
 		if not found_line == None:
 			key_lines.append(line_finder(file, word)[0] - 1)
 		else:
-			key_lines.append(None)
+			key_lines.append(None)	
 
 	file[key_lines[0]] = 'initial CNEUT1 (CV4):                 {0}\n'.format(new_cneuts[0])
 	file[key_lines[1]] = 'final   CNEUT1 (CV5):                 {0}\n'.format(new_cneuts[1])
@@ -83,6 +78,13 @@ def update_settings(settings_filename, new_cneuts):
 	with open(settings_filename, 'w') as f:
 		f.writelines(file)
 		print('Settings file updated')
+
+# Closes the program if astra ended with error
+def astra_error(flag):
+	if not flag:
+		print( 'Astra exited with error, closing the program' + '\n' + \
+		       '================================================')
+		exit()
 
 
 #---------------------------------------------------------------------------------------------------------------------------------------
@@ -134,80 +136,67 @@ with open(settings_filename, 'r') as f:
 
 # header_lines[0] is assumed to be a header of description block and i skipped
 astrastring        = astra_settings(file, header_lines[1])
-modelvars          = model_settings(file, header_lines[2])
+modelvars          = model_settings(file, header_lines[2], astrastring.exp)
 transp_sett        = transp_vars(file,    header_lines[3])
 execution_settings = exec_settings(file,  header_lines[4])
 
+if modelvars.dyndur == None:
+	print('Problem with dynamic parameter in exp-fille. Closing program.')
+	exit()	
 
-# Reading dynamics duration from dyn/*
-dyndur = dynreader(astrastring.exp, modelvars.dynam_name, float(modelvars.dyn_start))
-
-# Save current time to estimate pewformance
-start_time = dtime.now()
 
 # Starting astra calculation
 print('\n================================================')
+# Starting astra calculation
+flag = astra_calculation(astrastring, modelvars, transp_sett, tm, os)
+
+# Checking if astra performed well, exiting if it didn't
+astra_error(flag)
+
+# Reading the saved data
+arraydata, radarray, column_names = read_astra_results(dyn_file_name, rad_file_name, pd)
+
+# If autosampling is on
 if modelvars.cycle_key:
 	iteration = 1                 # -- cycle counter
 	print('Autosampling is on')
 	while True:
-		# Astra calculation
-		start_time = dtime.now()
-		flag       = astra_calculation(astrastring, modelvars, transp_sett,
-                                 dyndur, tm, os, psutil)
-		eval_time = dtime.now() - start_time
-		print('\n================================================\n' +          \
-                    'Iteration {0} ended in {1} seconds\n'.format(iteration, round(eval_time.seconds, 1)))
+		# Calculating CNEUTS for better agreement
+		# suggflag == True -- good agreement, False -- need recalculation
+		[suggflag, sugg] = suggester(modelvars, arraydata)
+		if not suggflag:
+			iteration += 1
+			print('Starting iteration {} with new model parameters\n'.format(iteration))
 
-		if flag:
+			# Updating model vars with new suggested CNEUTs
+			modelvars.set_new_cneuts(sugg)
+
+			# Starting new calculation with updated parameters
+			flag = astra_calculation(astrastring, modelvars, transp_sett, tm, os)
+
+			# Checking if astra performed well, exiting if it didn't
+			astra_error(flag)
+
 			# Reading the saved data
 			arraydata, radarray, column_names = read_astra_results(dyn_file_name, rad_file_name, pd)
-
-			# Calculating CNEUTS for best agreement
-			# suggflag == True -- good agreement, False -- need recalculation
-			[suggflag, sugg] = suggester(modelvars, arraydata, dyndur)
-			if not suggflag:
-				modelvars.set_new_cneuts(sugg)
-				iteration += 1
-				print('Starting with new model parameters\n')
-
-			# If agreement is good, exit the loop
-			else:
-				break
-		# If astra exited with an error, exit the programm
+		
+		# If agreement is good, exit the loop
 		else:
-			print('Astra exited with error, closing the program' + '\n' +
-                  '================================================')
-			exit()
+			print("Successfully exiting iteration loop")
+			break
 
+	# Updating the settings file if auto-update is on
 	if execution_settings.auto_update:
 		update_settings(settings_filename, [modelvars.init_cneut, modelvars.end_cneut])
-	
-else:
-	print('Autosampling is off')
-	# Astra calculation
-	flag = astra_calculation(astrastring, modelvars, transp_sett,
-                          dyndur, tm, os, psutil)
-	eval_time = dtime.now() - start_time
-	print('================================================\n' + \
-            'Calculation ended in {0} seconds'.format(round(eval_time.seconds, 1)))
 
-	if flag:
-		# Reading the saved data
-		arraydata, radarray, column_names = read_astra_results(
-			dyn_file_name, rad_file_name, pd)
-		# If astra exited with an error, exit the programm
-	else:
-		print( 'Astra exited with error, closing the program' + '\n' + \
-			   '================================================')
-		exit()
+#End of calculation block
 print('================================================\n')
-		
-# Process the results of the calculation
+	
+#====Process the results of the calculation=====================================
 [time, r,
  tungsten_exp, tungsten_model,
  anomal_coeffs, nclass_coeffs,
- pr_err, dynamics_indices] = as_processing(np, arraydata, radarray, dyndur, modelvars, column_names)
+ pr_err, dynamics_indices] = as_processing(np, arraydata, radarray, modelvars, column_names)
 
 
 #====File saving================================================================
@@ -215,13 +204,13 @@ if flag:
 	if execution_settings.saving_settings:
 		# Logging used settings
 		make_dir(execution_settings.log_dir)
-		setfilesaver(json, dtime, os, astrastring, modelvars,
+		setfilesaver(os, astrastring, modelvars,
 		             transp_sett, execution_settings.log_dir)
 
 	if execution_settings.saving_data:
 		# Saving results into file
 		make_dir(execution_settings.data_dir)
-		datfilesaver(dtime, np, json, os, time, r, tungsten_exp, tungsten_model,
+		datfilesaver(np, os, time, r, tungsten_exp, tungsten_model,
 					 anomal_coeffs, nclass_coeffs, pr_err,
 	                 astrastring, modelvars, execution_settings.data_dir)
 

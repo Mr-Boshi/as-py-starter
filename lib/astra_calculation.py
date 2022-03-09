@@ -1,3 +1,8 @@
+# from asyncio import subprocess
+from operator import sub
+import psutil, subprocess
+from datetime import datetime as dtime
+
 # Function to set strahl.control file
 def strahlcontrol(filename):
 	import os
@@ -9,46 +14,9 @@ def strahlcontrol(filename):
 		strahl_file.write(stral_control)
 
 
-# Function to print astra parameters in terminal
-def cmd_print_astra(astrastring):
-	
-	#Setting a pretty message to terminal
-	if astrastring.back_key:
-		key = 'Yes'
-	else:
-		key = 'No'
-
-	cmd_text = '================================================'      + '\n' \
-             + 'Astra-Strahl model name:         '+astrastring.model   + '\n' \
-             + 'Experimental data file:          '+astrastring.exp     + '\n' \
-             + 'Strahl param.file:               '+astrastring.param   + '\n' \
-             + 'Calculation limits:              '+astrastring.st_time + ' ... ' + astrastring.end_time + '\n' \
-             + 'Background key:                  '+key                 + '\n' \
-             + '================================================'
-	#Printing a pretty message
-	print(cmd_text)
-
-
-# Function to print model parameters in terminal
-def cmd_print_parameters(modelvars, dynamics_duration):
-	low_cimp4 = [float(modelvars.dyn_start)-0.01,
-              float(modelvars.dyn_start)+float(dynamics_duration)+0.01]
-	
-	#Setting a pretty message to terminal
-	cmd_text = 'Initial CNEUT1:                  '+str(modelvars.init_cneut) + '\n' \
-             + 'Final   CNEUT1:                  '+str(modelvars.end_cneut) + '\n' \
-             + 'Start Dynamics:                  '+str(modelvars.dyn_start) + '\n' \
-             + 'Dynamics duration:               '+str(dynamics_duration) + '\n' \
-             + 'Detailed calculation:            '+str(low_cimp4[0]) + '...' + str(low_cimp4[1]) + '\n' \
-             + 'Time of ASTRA termination:       '+str(2*float(modelvars.dyn_start)+float(dynamics_duration)+2*0.01) + '\n' \
-             + '================================================'
-	# Printing model parameters
-	print(cmd_text)
-
-
 # Function to set up the model
-def model_setting(model_name, modelvars, dyndur, transp_sett):
-	from lib.dynreader import line_finder
+def model_setting(model_name, modelvars, transp_sett):
+	from lib.line_finder import line_finder
 
 	def line_formatter(line, var = None):
 		if var == None:
@@ -76,14 +44,14 @@ def model_setting(model_name, modelvars, dyndur, transp_sett):
 	if not key_lines[2] == None:
 		model_data[key_lines[2]] = line_formatter('CV6 = {};													! Start Dynamics', modelvars.dyn_start)
 	if not key_lines[3] == None:		
-		model_data[key_lines[3]] = line_formatter('CV7 = {};									   ! Duration of detaled calculation', dyndur)
+		model_data[key_lines[3]] = line_formatter('CV7 = {};									   ! Duration of detaled calculation', modelvars.dyndur)
 	
 	with open('equ/' + model_name, 'w') as f:
 			f.writelines(model_data)
 
 # Function to set up the exp file
 def exp_setting(exp_file, transp_sett):
-	from lib.dynreader import line_finder
+	from lib.line_finder import line_finder
 
 	# Saving contents of the exp file splitted in lines in a variable
 	with open('exp/'+exp_file, 'r') as f:
@@ -96,11 +64,9 @@ def exp_setting(exp_file, transp_sett):
 		for word in search_keys:
 			coeff_line.append(line_finder(exp_data, word)[0])
 
-		print(coeff_line)
-
 		if coeff_line[0] == None:
 			exp_data.append('!!!!!! Anomalous diffusion (rt) [m2/s] \n')
-			exp_data.append('GRIDTYPE  18  POINTS 4 NAMEXP  CAR9   NTIMES 1 \n')
+			exp_data.append('GRIDTYPE  18  POINTS 4 NAMEXP  CAR9   NTIMES 1  FACTOR 1 \n')
 			exp_data.append('0.01 \n')
 			exp_data.append('1.500 \n')
 			exp_data.append('0 0.1 0.2 0.3 \n')
@@ -111,7 +77,7 @@ def exp_setting(exp_file, transp_sett):
 
 		if coeff_line[1] == None:
 			exp_data.append('!!!!!! Anomalous pinch (rt) [m/s] \n')
-			exp_data.append('GRIDTYPE  18  POINTS 31 NAMEXP  CAR10   NTIMES 1 \n')
+			exp_data.append('GRIDTYPE  18  POINTS 31 NAMEXP  CAR10   NTIMES 1  FACTOR 1 \n')
 			exp_data.append('0.01 \n')
 			exp_data.append('1.500 \n')
 			exp_data.append('0 0.1 0.2 0.3 \n')
@@ -131,35 +97,39 @@ def exp_setting(exp_file, transp_sett):
 		print('Anomalous transport oefficients ar not matching sizes. Exiting the program')
 		exit()
 
-	exp_data[dn_lines[0]-3] = 'GRIDTYPE  18  POINTS {} NAMEXP  CAR9   NTIMES 1'.format(points) + '\n'
-	exp_data[cn_lines[0]-3] = 'GRIDTYPE  18  POINTS {} NAMEXP  CAR10   NTIMES 1'.format(points) + '\n'
+	exp_data[dn_lines[0]-3] = 'GRIDTYPE  18  POINTS {points} NAMEXP  CAR9   NTIMES 1  FACTOR 1'.format(points = points) + '\n'
+	exp_data[cn_lines[0]-3] = 'GRIDTYPE  18  POINTS {points} NAMEXP  CAR10   NTIMES 1  FACTOR 1'.format(points = points) + '\n'
 
 	exp_data[dn_lines[0]] = transp_sett.radii + '\n'
 	exp_data[cn_lines[0]] = transp_sett.radii + '\n'
 
-	exp_data[dn_lines[1]] = transp_sett.an_dif +   '\n'
-	exp_data[cn_lines[1]] = transp_sett.an_pinch + '\n'
+	exp_data[dn_lines[1]] = transp_sett.factorize('diffusion') +   '\n'
+	exp_data[cn_lines[1]] = transp_sett.factorize('pinch') + '\n'
 
 	with open('exp/' + exp_file, 'w') as f:
 		f.writelines(exp_data)
 
 
 # Function to start astra
-def startastra(astrastring, tm, os, psutil):
-	from lib.processfinder import processfinder
+def startastra(astrastring, tm, os):
 	from progress.spinner import MoonSpinner
+	from lib.processfinder import processfinder
 
 	# Starting ASTRA
 	print('Astra messeges:\n')
-	os.system(astrastring.cmd_string)
+	astra_process = subprocess.Popen(['.exe/astra', astrastring.exp, astrastring.model, astrastring.st_time, astrastring.end_time,  astrastring.back_key], stdout=subprocess.DEVNULL)
+	# stdout=subprocess.DEVNULL
 
 	if astrastring.back_key:
+		tm.sleep(3)
 		print('================================================')
 		process = astrastring.model + '.exe'
 		with MoonSpinner('Astra calculation in progress...  ') as bar:
 			while processfinder(psutil, process):
 				tm.sleep(1)
 				bar.next()
+	else:
+		astra_process.wait()
 
 	if os.path.isfile('dat/dynam.dat'):
 		flag = True
@@ -171,18 +141,27 @@ def startastra(astrastring, tm, os, psutil):
 #-------------------------------------------------------------------------------
 """ The main function ======================================================="""
 #-------------------------------------------------------------------------------
-def astra_calculation(astrastring, modelvars, transp_sett, dyndur, tm, os, psutil):
+def astra_calculation(astrastring, modelvars, transp_sett, tm, os):
+	# Save current time to estimate pewformance
+	start_time = dtime.now()
+	
 	# Setting shtral.control file
 	strahlcontrol(astrastring.param)
 
 	# Setting the model file and the exp file
-	model_setting(astrastring.model, modelvars, dyndur, transp_sett)
+	model_setting(astrastring.model, modelvars, transp_sett)
 	exp_setting(astrastring.exp, transp_sett)
 
 	#Printing Astra parameters and model parameters
-	cmd_print_astra(astrastring)
-	cmd_print_parameters(modelvars, dyndur)
+	astrastring.cmd()
+	modelvars.cmd()
 
 	# Starting Astra calculation.
-	flag = startastra(astrastring, tm, os, psutil)
+	flag = startastra(astrastring, tm, os)
+
+	# Show how much time did the calculation take
+	eval_time = dtime.now() - start_time
+	print('================================================\n' + \
+            'Calculation ended in {} seconds'.format(round(eval_time.seconds, 1)))
+
 	return flag

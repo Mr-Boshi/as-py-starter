@@ -1,6 +1,8 @@
-def datfilesaver(dtime, np, json, os, time, r, tungsten_exp, tungsten_model,
+def datfilesaver(np, os, time, r, tungsten_exp, tungsten_model,
 				 anomal_coeffs, nclass_coeffs, pr_err,
                  astrastring, modelvars, data_dir):
+	import json
+	from datetime import datetime as dtime
 
 	# Setting savefile name
 	timndat = dtime.now().strftime('%Y.%m.%d_%H-%M-%S')

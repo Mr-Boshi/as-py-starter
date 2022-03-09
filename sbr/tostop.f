@@ -21,7 +21,7 @@
          filename='dat/radial.dat'
                   ! print*,filename
          CALL OPENWT(13,filename,0,ier)
-         write(13,'(8(A3,9X))')
+         write(13,'(9(A4,8X))')
      >    'Rad',
      >    'Prc',
      >    'Prx',
@@ -29,9 +29,10 @@
      >    'Dan',
      >    'Vnc',
      >    'Dnc',
-     >    'n_W'
+     >    'n_Wc',
+     >    'n_Wx'
          do J=1,NA1
-            write(13,'(8(E11.5,1X))')
+            write(13,'(9(E11.5,1X))')
      >      AMETR(J),
      >      CAR3(J),
      >      PRADX(J),
@@ -39,7 +40,8 @@
      >      DN(J),
      >      CAR7(J)*1.e-4,
      >      CAR8(J)*1.e-2,
-     >      CAR5(J)
+     >      CAR5(J),
+     >      CAR5(J)*PRADX(J)/CAR3(J)
          enddo
          close(13)
       

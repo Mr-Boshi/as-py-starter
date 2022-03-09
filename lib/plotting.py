@@ -83,7 +83,6 @@ def plotting(pt, radii, r, time, dynamics_indices, tungsten_model, tungsten_exp,
 	ax.set_ylabel('Prad_exp/Prad_calc')
 	ax.grid(True)
 
-	pt.savefig('dat/pyplot/test.png', format='png')
 	pt.show()
 
 

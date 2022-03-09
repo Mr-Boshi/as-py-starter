@@ -1,3 +1,6 @@
+from unicodedata import name
+
+
 def processfinder(psutil, processName):
 	'''
 	Check if there is any running process that contains the given name processName.

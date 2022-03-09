@@ -11,13 +11,19 @@ ZRD2 = 300;					   ! Index of WORK to start to save impurity density
 ZRD3 = 297;						! Index of WORK to save Zeff, sum(z*nz), sum(nz)
 
 ! ============================ Calculation setup ============================= c
+
+
 CNEUT1 = CV4+(CV5-CV4)*FJUMP(CV6+CIMP4)
-CIMP4  = 0.01-0.009*FJUMP(CV6-0.01)+0.009*FJUMP(CV6+CV7+0.01)!
-DTOUT  = CIMP4
+CIMP4  = 0.01-0.009*FJUMP(CV6-0.01)+0.009*FJUMP(CV6+CV7+0.01)
+DTOUT  = CIMP4 
+
+
+
 
 CV8    = 2*CV6+CV7+2*CIMP4											  ! End time
 
-! ================================== Summary ================================= c
+
+!\================================== Summary ================================= c
 ! Experimental C_6 (cm-3):_________________________________________________CAR6X
 ! Experimental Prad_W (W/m2):_______________________________________________PRAD
 ! Modeled Prad_W (W/cm3):___________________________________________________CAR1
@@ -30,8 +36,7 @@ CV8    = 2*CV6+CV7+2*CIMP4											  ! End time
 ! Mean Neoclassic pinch:____________________________________________________CAR8
 ! Anomalous diffusion:_____________________________________________________CAR9X
 ! Anomalous pinch:________________________________________________________CAR10X
-
-
+! /
 
 ! ============================================================================ c
 ! =============================== MODEL STARTS =============================== c
@@ -40,10 +45,11 @@ CV8    = 2*CV6+CV7+2*CIMP4											  ! End time
 ! ======================== Grid and equiligrium setup ======================== c
 NEQUIL=41.41
 
-! ========================== Main plasma parameters ========================== c
+!\ ========================== Main plasma parameters ========================== c
 NE:AS;	NE = NEX;
 TE:AS;	TE = TEX;
 TI:AS;	TI = TIX;
+!/
 
 ! =========================== Neutrals calculation =========================== c
 NEUT:CIMP4
@@ -220,3 +226,8 @@ PRE5_PRADX(0.125);
 ! =========================== C6+ dynamics by CXRS =========================== c
 ! CAR3=(7.1e-2*exp(-(time-CV6)/22.68e-3)+6.9e-2);
 ! CAR11=PRAD;						! Setting radiation data from exp-file
+
+
+
+
+

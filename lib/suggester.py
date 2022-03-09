@@ -1,4 +1,4 @@
-def suggester(modelvars, arraydata, dyndur):
+def suggester(modelvars, arraydata):
 	from lib.as_processing import get_dyn_indices
 	from lib.classes import errors
 
@@ -9,7 +9,7 @@ def suggester(modelvars, arraydata, dyndur):
 	prc_central = arraydata[:, 10]
 
 	#Getting indecies to cut out dynamics and plots
-	dynamics_indices = get_dyn_indices(time, modelvars.dyn_start, dyndur)
+	dynamics_indices = get_dyn_indices(time, modelvars.dyn_start, modelvars.dyndur)
 	ascertion_ends   = None
 	
 	for i in range(dynamics_indices[0],0,-1):
@@ -21,22 +21,31 @@ def suggester(modelvars, arraydata, dyndur):
 			break
 	
 	
-	# print('Dynamics borders: {0} ... {1}\n'.format(time[dynamics_indices[0]], time[dynamics_indices[1]]))
-	
+	print('Dynamics borders: {0} ... {1}\n'.format(time[dynamics_indices[0]], time[dynamics_indices[1]]))
+	print(pre[dynamics_indices[0]], prc[dynamics_indices[0]])
+	print(pre[dynamics_indices[1]], prc[dynamics_indices[1]])
+
+
 	# Calculating perfect CNEUT1
 	suggflag    = True
 	sugg        = [float(modelvars.init_cneut), float(modelvars.end_cneut)]
-	init_errors = errors(pre[dynamics_indices[0]], prc[dynamics_indices[0]])
-	end_errors  = errors(pre[dynamics_indices[1]], prc[dynamics_indices[1]])
+	relation_init    = pre[dynamics_indices[0]] / prc[dynamics_indices[0]]
+	relation_end    = pre[dynamics_indices[1]] / prc[dynamics_indices[1]]
 
-	if init_errors.rel_error > modelvars.sigma_error:
-		sugg[0] = round(sugg[0]*init_errors.error, 4)
-		suggflag = False
+
+	if relation_init > modelvars.sigma_error:
+		new_cneut = round(sugg[0]*relation_init, 4)
+		if new_cneut != sugg[0]:
+			sugg[0] = new_cneut
+			suggflag = False
 		print('---')
 		print('Suggested initial CNEUT: {0}\n'.format(sugg[0]))
-	if end_errors.rel_error > modelvars.sigma_error:
-		sugg[1] = round(sugg[1]*end_errors.error, 4)
-		suggflag = False
+	if relation_end > modelvars.sigma_error:
+		new_cneut = round(sugg[1]*relation_end, 4)
+		if new_cneut != sugg[1]:
+			sugg[1] = new_cneut
+			suggflag = False
+
 		print('\nSuggested final CNEUT: {0}\n'.format(sugg[1]))
 		print('---')
 

@@ -1,5 +1,8 @@
 # Function to save input arguments into file
-def setfilesaver(json, dtime, os, astrastring, modelvars, transp_sett, log_dir):
+def setfilesaver(os, astrastring, modelvars, transp_sett, log_dir):
+	import json
+	from datetime import datetime as dtime
+
 	# Saving input parameters to file
 	timndat = dtime.now().strftime('%Y.%m.%d_%H-%M-%S')
 	filename = timndat+' '+astrastring.exp+' '+astrastring.param+'.txt'
